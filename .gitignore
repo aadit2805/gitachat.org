@@ -11,9 +11,6 @@ venv/
 # Operating System files
 .DS_Store
 
-# Project-specific
-data/
-
 # Logs
 *.log
 

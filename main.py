@@ -25,7 +25,7 @@ async def process_verse(session, chapter, verse):
     commentary = h2_elements[1].find_next('p').text.strip()
     
     return {
-        "chapter": chapter,
+        "chapter": chapter, 
         "verse": verse,
         "translation": translation,
         "commentary": commentary
@@ -44,10 +44,10 @@ async def process_chapter(session, chapter, pbar):
     return results
 
 async def save_verse(verse_data):
-    chapter_dir = os.path.join("bhagavad_gita", f"chapter_{verse_data['chapter']:02d}")
+    chapter_dir = os.path.join("data", f"{verse_data['chapter']}")
     os.makedirs(chapter_dir, exist_ok=True)
     
-    file_path = os.path.join(chapter_dir, f"verse_{verse_data['verse']:03d}.json")
+    file_path = os.path.join(chapter_dir, f"{verse_data['verse']}.json")
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(verse_data, f, ensure_ascii=False, indent=2)
 
