@@ -1,1 +1,21 @@
+# Python
+__pycache__/
+venv/
+
+# Environment variables
+.env
+
+# IDEs and editors
 .vscode/
+
+# Operating System files
+.DS_Store
+
+# Project-specific
+data/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
