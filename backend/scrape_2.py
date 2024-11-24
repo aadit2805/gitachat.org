@@ -15,8 +15,6 @@ async def fetch_verse(session, chapter, verse):
 
 async def process_verse(session, chapter, verse):
     html_content = await fetch_verse(session, chapter, verse)
-    if not html_content:
-        return None
     
     soup = BeautifulSoup(html_content, 'html.parser')
     translation_section = soup.find("div", {"id": "translation"})
