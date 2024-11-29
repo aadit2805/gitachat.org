@@ -33,7 +33,7 @@ def translate_to_english(text):
     return result['data']['translations'][0]['translatedText']
 
 # Path to your data folder (adjust if necessary)
-data_folder = 'data_2'  # Adjust this to match your actual folder structure
+data_folder = 'data'  # Adjust this to match your actual folder structure
 
 # Loop through each folder (chapter)
 for chapter_folder in os.listdir(data_folder):

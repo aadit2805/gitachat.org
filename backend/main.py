@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from model import match
@@ -20,6 +20,8 @@ class Query(BaseModel):
 async def query_gita(query: Query):
     try:
         result = match(query.text)
-        return result
+        if not result:  # Assuming empty result is invalid
+            raise HTTPException(status_code=404, detail="No matches found")
+        return {"status": "success", "data": result}
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))

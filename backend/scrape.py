@@ -6,7 +6,7 @@ import aiohttp
 from tqdm.asyncio import tqdm
 
 BASE_URL = "https://www.holy-bhagavad-gita.org/chapter/{}/verse/{}"
-DATA_DIR = "data_2"
+DATA_DIR = "data"
 
 async def fetch_verse(session, chapter, verse):
     url = BASE_URL.format(chapter, verse)

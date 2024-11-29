@@ -1,10 +1,10 @@
 import os
 import json
-import numpy as np
 import torch
 import openai
 from sentence_transformers import SentenceTransformer, util
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 #random statement idk why
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -15,18 +15,18 @@ openai.api_key = os.getenv("GPT_KEY")
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
-data_folder = 'data_2'
+data_folder = 'data'
 
 # embed the text
 def embed():
     verses = []
     embeddings = []
 
-    for chapter_folder in os.listdir(data_folder):
+    for chapter_folder in tqdm(os.listdir(data_folder)):
         chapter_path = os.path.join(data_folder, chapter_folder)
 
         if os.path.isdir(chapter_path):
-            for json_file in os.listdir(chapter_path):
+            for json_file in tqdm(os.listdir(chapter_path)):
                 file_path = os.path.join(chapter_path, json_file)
 
                 with open(file_path, 'r') as f:
@@ -58,7 +58,7 @@ def summarize(commentary_text, model_name="gpt-4"):
 def match(query):
     query_embedding = model.encode(query, convert_to_tensor=True) #embed query
     similarities = util.pytorch_cos_sim(query_embedding, embeddings).squeeze() #simiilarity
-    match_idx = torch.argmax(similarities).item() #index 
+    match_idx = torch.argmax(similarities).item() #index
 
     verse = verses[match_idx]
     commentary = summarize(verse['commentary'])
