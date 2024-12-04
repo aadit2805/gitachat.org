@@ -14,12 +14,12 @@ app.add_middleware(
 )
 
 class Query(BaseModel):
-    text: str
+    query: str
 
 @app.post("/api/query")
 async def query_gita(query: Query):
     try:
-        result = match(query.text)
+        result = match(query.query)
         if not result:  # Assuming empty result is invalid
             raise HTTPException(status_code=404, detail="No matches found")
         return {"status": "success", "data": result}
