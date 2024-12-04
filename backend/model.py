@@ -5,6 +5,7 @@ import openai
 from sentence_transformers import SentenceTransformer, util
 from dotenv import load_dotenv
 from tqdm import tqdm
+import pickle
 
 #random statement idk why
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -16,9 +17,22 @@ openai.api_key = os.getenv("GPT_KEY")
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
 data_folder = 'data'
+embeddings_folder = 'embeddings'
 
-# embed the text
+
 def embed():
+    embeddings_file = os.path.join(embeddings_folder, 'embeddings.pkl')
+    verses_file = os.path.join(embeddings_folder, 'verses.pkl')
+
+    if os.path.exists(embeddings_file) and os.path.exists(verses_file):
+        print("Loading existing embeddings...")
+        with open(embeddings_file, 'rb') as f:
+            embeddings = pickle.load(f)
+        with open(verses_file, 'rb') as f:
+            verses = pickle.load(f)
+        return verses, embeddings
+
+    print("Calculating new embeddings...")
     verses = []
     embeddings = []
 
@@ -32,17 +46,28 @@ def embed():
                 with open(file_path, 'r') as f:
                     verse_data = json.load(f)
 
-                # embed the commentary text
                 commentary_embedding = model.encode(verse_data['commentary'], convert_to_tensor=True)
                 embeddings.append(commentary_embedding)
 
-                # store verse data + embedding
                 verses.append(verse_data)
 
     embeddings = torch.stack(embeddings)
+
+    os.makedirs(embeddings_folder, exist_ok=True)
+
+    print("Saving embeddings...")
+    with open(embeddings_file, 'wb') as f:
+        pickle.dump(embeddings, f)
+    with open(verses_file, 'wb') as f:
+        pickle.dump(verses, f)
+
     return verses, embeddings
 
-verses, embeddings = embed()
+def load_embeddings():
+    global verses, embeddings
+    verses, embeddings = embed()
+
+load_embeddings()
 
 def summarize(commentary_text, model_name="gpt-4"):
     response = openai.ChatCompletion.create(
@@ -70,7 +95,7 @@ def match(query):
         "summarized_commentary": commentary
     }
 
-# loop to run in terminal
+
 if __name__ == "__main__":
     while True:
         query = input("Enter your query (type 'exit' to quit): ")
