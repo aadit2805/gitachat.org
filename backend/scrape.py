@@ -17,13 +17,13 @@ async def process_verse(session, chapter, verse):
     html_content = await fetch_verse(session, chapter, verse)
     
     soup = BeautifulSoup(html_content, 'html.parser')
-    translation_section = soup.find("div", {"id": "translation"})
+    translation_section = soup.find("div", {"class": "bg-verse-translation"})
     if translation_section is None:
         return None  
     
     translation = translation_section.get_text(strip=True)
-    commentary_section = soup.find("div", {"id": "commentary"})
-    commentary = " ".join([p.get_text(strip=True) for p in commentary_section.find_all("p")]) if commentary_section else ""
+    commentary_section = soup.find("div", {"class": "bg-verse-commentary"})
+    commentary = commentary_section.get_text(strip=True) if commentary_section else ""
     
     return {
         "chapter": chapter,
