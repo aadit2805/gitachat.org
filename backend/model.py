@@ -1,17 +1,20 @@
 import os
 import json
 import torch
-import openai
-from sentence_transformers import SentenceTransformer, util
 from dotenv import load_dotenv
+
+# Load .env FIRST before accessing environment variables
+load_dotenv()
+
+from openai import OpenAI
+from sentence_transformers import SentenceTransformer, util
 from tqdm import tqdm
 import pickle
 
 #random statement idk why
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
-load_dotenv()
-openai.api_key = os.getenv("GPT_KEY")
+client = OpenAI(api_key=os.getenv("GPT_KEY"))
 
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -70,15 +73,13 @@ def load_embeddings():
 load_embeddings()
 
 def summarize(commentary_text, model_name="gpt-4"):
-    response = openai.ChatCompletion.create(
-        model=model_name,
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant that summarizes text."},
-            {"role": "user", "content": f"Summarize the following commentary: {commentary_text}"}
-        ],
-        max_tokens=200  
-    )
-    return response.choices[0].message['content'].strip()
+    response = client.chat.completions.create(model=model_name,
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant that summarizes text."},
+        {"role": "user", "content": f"Summarize the following commentary: {commentary_text}"}
+    ],
+    max_tokens=200)
+    return response.choices[0].message.content.strip()
 
 def match(query):
     query_embedding = model.encode(query, convert_to_tensor=True) #embed query
