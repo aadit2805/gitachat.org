@@ -11,6 +11,7 @@ google-cloud-translate==3.16.0
 torch==2.5.0
 openai==0.28.0
 sentence-transformers==3.3.0
+pinecone==5.4.2
 
 # Web API (main.py)
 fastapi==0.115.5

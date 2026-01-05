@@ -5,7 +5,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     console.log('Sending query:', body.query);
 
-    const response = await fetch("http://localhost:8000/api/query", {
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
+    const response = await fetch(`${backendUrl}/api/query`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
