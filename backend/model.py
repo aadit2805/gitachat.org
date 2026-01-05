@@ -3,28 +3,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
-client = OpenAI(api_key=os.getenv("GPT_KEY"))
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 index = pc.Index(os.getenv("PINECONE_INDEX"))
-
-def summarize(commentary_text, model_name="gpt-4"):
-    response = client.chat.completions.create(
-        model=model_name,
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant that summarizes text."},
-            {"role": "user", "content": f"Summarize the following commentary: {commentary_text}"}
-        ],
-        max_tokens=200
-    )
-    return response.choices[0].message.content.strip()
 
 def match(query):
     query_embedding = model.encode(query).tolist()
@@ -38,13 +25,11 @@ def match(query):
     match = results['matches'][0]
     metadata = match['metadata']
 
-    commentary = summarize(metadata['commentary'])
-
     return {
         "chapter": metadata['chapter'],
         "verse": metadata['verse'],
         "translation": metadata['translation'],
-        "summarized_commentary": commentary
+        "summarized_commentary": metadata['summary']  # Pre-computed, no GPT call
     }
 
 
