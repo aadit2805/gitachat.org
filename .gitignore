@@ -16,3 +16,8 @@ venv/
 
 # Temporary files
 *.tmp
+
+.claude/
+
+/backend/data/
+/backend/embeddings/
