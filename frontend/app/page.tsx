@@ -2,6 +2,17 @@
 
 import { useEffect, useState } from "react";
 
+function renderMarkdown(text: string) {
+  // Convert **bold** to <strong>
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
 interface GitaResponse {
   chapter: number;
   verse: number;
@@ -53,32 +64,33 @@ export default function Home() {
   if (!mounted) return null;
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-10 sm:px-10 sm:py-14 md:px-12 md:py-16">
-        {/* Header */}
-        <header className="mb-12 sm:mb-auto">
-          <button onClick={reset}>
-            <h1 className="text-5xl font-medium tracking-tight sm:text-6xl">
-              GitaChat
-            </h1>
-          </button>
-        </header>
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
+      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 sm:px-10 md:px-12">
 
-        {/* Main */}
-        <main className="sm:my-auto">
+        {/* Main content */}
+        <main className={response ? "pt-10 sm:pt-14" : "pt-[22vh] sm:pt-[25vh]"}>
           {!response ? (
             <div>
-              <form onSubmit={handleSubmit}>
-                <p className="mb-6 font-sans text-base text-muted-foreground">
+              {/* Title block */}
+              <header className="mb-16">
+                <button onClick={reset}>
+                  <h1 className="text-6xl font-medium tracking-[0.04em] sm:text-7xl md:text-8xl">
+                    GitaChat
+                  </h1>
+                </button>
+                <p className="mt-6 font-sans text-sm tracking-wide text-muted-foreground/70">
                   Ask a question. Receive guidance from the Bhagavad Gita.
                 </p>
+              </header>
 
+              {/* Form */}
+              <form onSubmit={handleSubmit}>
                 <input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="What is troubling you?"
-                  className="mb-8 w-full border-b-2 border-border bg-transparent pb-3 text-2xl placeholder:text-muted-foreground/40 focus:border-saffron focus:outline-none sm:text-3xl"
+                  className="mb-6 w-full border-b border-border/40 bg-transparent pb-3 text-xl tracking-wide placeholder:text-muted-foreground/30 focus:border-saffron/60 focus:outline-none sm:text-2xl"
                   required
                   autoFocus
                 />
@@ -86,7 +98,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={loading || !query.trim()}
-                  className="bg-saffron px-6 py-3 font-sans text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+                  className="bg-saffron px-10 py-3.5 font-sans text-sm font-medium tracking-wider text-white transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
                   {loading ? (
                     <span className="animate-think">Seeking...</span>
@@ -97,46 +109,54 @@ export default function Home() {
               </form>
 
               {error && (
-                <p className="mt-6 font-sans text-sm text-saffron">{error}</p>
+                <p className="mt-8 font-sans text-sm text-saffron">{error}</p>
               )}
             </div>
           ) : (
             <article className="animate-slow-rise">
-              <div className="mb-8 inline-block bg-saffron-light px-3 py-1.5">
-                <span className="font-sans text-sm font-medium text-saffron">
+              {/* Back button as header */}
+              <button
+                onClick={reset}
+                className="mb-12 block font-sans text-sm tracking-wide text-muted-foreground/60 transition-colors hover:text-foreground"
+              >
+                ← Back
+              </button>
+
+              {/* Chapter/Verse badge */}
+              <div className="mb-8 inline-block bg-saffron-light px-4 py-2">
+                <span className="font-sans text-sm font-medium tracking-wide text-saffron">
                   Chapter {response.chapter}, Verse {response.verse}
                 </span>
               </div>
 
-              <blockquote className="mb-10 border-l-2 border-saffron pl-5">
-                <p className="text-xl leading-relaxed sm:text-2xl">
+              {/* Verse */}
+              <blockquote className="mb-12 border-l-2 border-saffron/60 pl-6">
+                <p className="text-xl leading-relaxed tracking-wide sm:text-2xl">
                   {response.translation}
                 </p>
               </blockquote>
 
-              <div className="mb-12">
-                <h2 className="mb-4 font-sans text-xs font-medium uppercase tracking-wider text-saffron">
+              {/* Divider */}
+              <div className="mb-10 h-px w-16 bg-border/30" />
+
+              {/* Commentary */}
+              <div>
+                <h2 className="mb-4 font-sans text-xs font-medium uppercase tracking-widest text-saffron/80">
                   Commentary
                 </h2>
-                <p className="text-base leading-loose text-muted-foreground sm:text-lg">
-                  {response.summarized_commentary}
+                <p className="text-base leading-loose tracking-wide text-foreground/70 sm:text-lg">
+                  {renderMarkdown(response.summarized_commentary)}
                 </p>
               </div>
-
-              <button
-                onClick={reset}
-                className="font-sans text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                ← Ask another question
-              </button>
             </article>
           )}
         </main>
 
-        {/* Footer */}
-        <footer className="mt-auto border-t border-border pt-6">
-          <p className="font-sans text-xs text-muted-foreground">
-            Bhagavad Gita — Song of the Divine
+        {/* Footer - anchored to bottom */}
+        <footer className="mt-auto pb-8 pt-20">
+          <div className="h-px w-12 bg-border/20 mb-6" />
+          <p className="font-sans text-xs tracking-wider text-muted-foreground/40">
+            Bhagavad Gita
           </p>
         </footer>
       </div>
