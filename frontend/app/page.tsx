@@ -111,6 +111,29 @@ export default function Home() {
               {error && (
                 <p className="mt-8 font-sans text-sm text-saffron">{error}</p>
               )}
+
+              {/* Suggested prompts */}
+              <div className="mt-16">
+                <p className="mb-4 font-sans text-xs tracking-wider text-muted-foreground/40">
+                  Try asking
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "How do I find inner peace?",
+                    "What is my purpose in life?",
+                    "How to overcome fear?",
+                    "What is true happiness?",
+                  ].map((prompt) => (
+                    <button
+                      key={prompt}
+                      onClick={() => setQuery(prompt)}
+                      className="border border-border/30 px-4 py-2 font-sans text-sm text-muted-foreground/60 transition-colors hover:border-saffron/40 hover:text-foreground/80"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           ) : (
             <article className="animate-slow-rise">
