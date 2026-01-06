@@ -1,6 +1,5 @@
 "use client";
 
-import { Moon, Send, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface GitaResponse {
@@ -15,28 +14,16 @@ export default function Home() {
   const [response, setResponse] = useState<GitaResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark";
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-
-    const initialTheme = savedTheme || (prefersDark ? "dark" : "light");
-    setTheme(initialTheme);
-    document.documentElement.setAttribute("data-theme", initialTheme);
+    setMounted(true);
   }, []);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!query.trim()) return;
+
     setLoading(true);
     setError("");
 
@@ -52,90 +39,106 @@ export default function Home() {
       setResponse(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
-      console.error("Error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const resetPage = () => {
+  const reset = () => {
     setQuery("");
     setResponse(null);
     setError("");
-    setLoading(false);
   };
 
+  if (!mounted) return null;
+
   return (
-    <div className="min-h-screen p-4 sm:p-8">
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-12 flex items-center justify-between">
-          <h1
-            onClick={resetPage}
-            className="animate-typing cursor-pointer bg-gradient-to-r from-primary to-primary bg-clip-text text-4xl font-bold text-transparent"
-          >
-            GitaChat
-          </h1>
-          <button
-            onClick={toggleTheme}
-            className="hover:bg-secondary/20 rounded-lg p-2 transition-colors"
-          >
-            {theme === "light" ? <Moon size={24} /> : <Sun size={24} />}
+    <div className="flex min-h-screen flex-col">
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-10 sm:px-10 sm:py-14 md:px-12 md:py-16">
+        {/* Header */}
+        <header className="mb-12 sm:mb-auto">
+          <button onClick={reset}>
+            <h1 className="text-5xl font-medium tracking-tight sm:text-6xl">
+              GitaChat
+            </h1>
           </button>
-        </div>
+        </header>
 
-        <form onSubmit={handleSubmit} className="mb-8">
-          <div className="relative">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ask about the Bhagavad Gita..."
-              className="gita-input pr-[100px]"
-              required
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="gita-button absolute right-2 top-1/2 -translate-y-1/2 !py-2"
-            >
-              {loading ? (
-                "Loading..."
-              ) : (
-                <>
-                  Ask <Send className="ml-2 inline-block h-4 w-4" />
-                </>
+        {/* Main */}
+        <main className="sm:my-auto">
+          {!response ? (
+            <div>
+              <form onSubmit={handleSubmit}>
+                <p className="mb-6 font-sans text-base text-muted-foreground">
+                  Ask a question. Receive guidance from the Bhagavad Gita.
+                </p>
+
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="What is troubling you?"
+                  className="mb-8 w-full border-b-2 border-border bg-transparent pb-3 text-2xl placeholder:text-muted-foreground/40 focus:border-saffron focus:outline-none sm:text-3xl"
+                  required
+                  autoFocus
+                />
+
+                <button
+                  type="submit"
+                  disabled={loading || !query.trim()}
+                  className="bg-saffron px-6 py-3 font-sans text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+                >
+                  {loading ? (
+                    <span className="animate-think">Seeking...</span>
+                  ) : (
+                    "Ask"
+                  )}
+                </button>
+              </form>
+
+              {error && (
+                <p className="mt-6 font-sans text-sm text-saffron">{error}</p>
               )}
-            </button>
-          </div>
-        </form>
-
-        {error && (
-          <div className="mb-4 rounded-xl border border-red-500/20 bg-red-100/10 p-4 text-red-500">
-            {error}
-          </div>
-        )}
-
-        {response && (
-          <div className="gita-card space-y-6">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-primary">
-                Chapter {response.chapter}, Verse {response.verse}
-              </span>
-              <span className="rounded-full bg-accent px-3 py-1 text-xs text-accent-foreground">
-                Bhagavad Gita
-              </span>
             </div>
+          ) : (
+            <article className="animate-slow-rise">
+              <div className="mb-8 inline-block bg-saffron-light px-3 py-1.5">
+                <span className="font-sans text-sm font-medium text-saffron">
+                  Chapter {response.chapter}, Verse {response.verse}
+                </span>
+              </div>
 
-            <div className="text-xl font-medium">{response.translation}</div>
+              <blockquote className="mb-10 border-l-2 border-saffron pl-5">
+                <p className="text-xl leading-relaxed sm:text-2xl">
+                  {response.translation}
+                </p>
+              </blockquote>
 
-            <div className="border-t border-card-border pt-6">
-              <h3 className="mb-3 font-medium text-primary">Commentary</h3>
-              <p className="text-foreground/80 leading-relaxed">
-                {response.summarized_commentary}
-              </p>
-            </div>
-          </div>
-        )}
+              <div className="mb-12">
+                <h2 className="mb-4 font-sans text-xs font-medium uppercase tracking-wider text-saffron">
+                  Commentary
+                </h2>
+                <p className="text-base leading-loose text-muted-foreground sm:text-lg">
+                  {response.summarized_commentary}
+                </p>
+              </div>
+
+              <button
+                onClick={reset}
+                className="font-sans text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                ← Ask another question
+              </button>
+            </article>
+          )}
+        </main>
+
+        {/* Footer */}
+        <footer className="mt-auto border-t border-border pt-6">
+          <p className="font-sans text-xs text-muted-foreground">
+            Bhagavad Gita — Song of the Divine
+          </p>
+        </footer>
       </div>
     </div>
   );
