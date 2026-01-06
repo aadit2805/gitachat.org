@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none">
+  <defs>
+    <!-- Flute gradient matching the warm gold/bronze of the site -->
+    <linearGradient id="fluteGold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#C9956C"/>
+      <stop offset="50%" style="stop-color:#D4A574"/>
+      <stop offset="100%" style="stop-color:#B8860B"/>
+    </linearGradient>
+    
+    <!-- Peacock feather gradients -->
+    <linearGradient id="featherBase" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#C9956C"/>
+      <stop offset="30%" style="stop-color:#7D6B5D"/>
+      <stop offset="70%" style="stop-color:#5C4D3D"/>
+      <stop offset="100%" style="stop-color:#3D2E1F"/>
+    </linearGradient>
+    
+    <linearGradient id="eyeOuter" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6B8E6B"/>
+      <stop offset="50%" style="stop-color:#4A7C59"/>
+      <stop offset="100%" style="stop-color:#2D4A3E"/>
+    </linearGradient>
+    
+    <linearGradient id="eyeMiddle" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E3A5F"/>
+      <stop offset="100%" style="stop-color:#0D1B2A"/>
+    </linearGradient>
+    
+    <radialGradient id="eyeCenter" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" style="stop-color:#D4A574"/>
+      <stop offset="60%" style="stop-color:#B8860B"/>
+      <stop offset="100%" style="stop-color:#8B6914"/>
+    </radialGradient>
+    
+    <!-- Hole color matching dark bg -->
+    <linearGradient id="holeColor" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1A1412"/>
+      <stop offset="100%" style="stop-color:#0D0A08"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background for Apple icon -->
+  <rect width="180" height="180" rx="40" fill="#1a1410"/>
+  
+  <!-- Peacock feather - scaled and centered -->
+  <g transform="translate(90, 15) scale(2.5)">
+    <!-- Feather barbs - left side -->
+    <path d="M -1 38 Q -8 30, -6 22" stroke="#5C4D3D" stroke-width="0.5" fill="none" opacity="0.7"/>
+    <path d="M -1 35 Q -10 26, -8 18" stroke="#5C4D3D" stroke-width="0.5" fill="none" opacity="0.7"/>
+    <path d="M -1 32 Q -11 22, -9 14" stroke="#6B5D4D" stroke-width="0.5" fill="none" opacity="0.8"/>
+    <path d="M -1 28 Q -10 18, -7 10" stroke="#7D6B5D" stroke-width="0.5" fill="none" opacity="0.8"/>
+    <path d="M 0 24 Q -8 14, -5 6" stroke="#8B7D6D" stroke-width="0.5" fill="none" opacity="0.6"/>
+    
+    <!-- Feather barbs - right side -->
+    <path d="M 1 38 Q 8 30, 6 22" stroke="#5C4D3D" stroke-width="0.5" fill="none" opacity="0.7"/>
+    <path d="M 1 35 Q 10 26, 8 18" stroke="#5C4D3D" stroke-width="0.5" fill="none" opacity="0.7"/>
+    <path d="M 1 32 Q 11 22, 9 14" stroke="#6B5D4D" stroke-width="0.5" fill="none" opacity="0.8"/>
+    <path d="M 1 28 Q 10 18, 7 10" stroke="#7D6B5D" stroke-width="0.5" fill="none" opacity="0.8"/>
+    <path d="M 0 24 Q 8 14, 5 6" stroke="#8B7D6D" stroke-width="0.5" fill="none" opacity="0.6"/>
+    
+    <!-- Main feather spine -->
+    <path 
+      d="M 0 2 Q 2 20, 0 42" 
+      stroke="#C9956C" 
+      stroke-width="1" 
+      fill="none"
+    />
+    
+    <!-- Outer feather shape - teardrop -->
+    <path
+      d="M 0 6 
+         Q -12 14, -10 22
+         Q -8 30, 0 34
+         Q 8 30, 10 22
+         Q 12 14, 0 6"
+      fill="url(#featherBase)"
+      opacity="0.9"
+    />
+    
+    <!-- Green outer ring of eye -->
+    <ellipse 
+      cx="0" cy="18" 
+      rx="7" ry="9" 
+      fill="url(#eyeOuter)"
+    />
+    
+    <!-- Dark blue middle ring -->
+    <ellipse 
+      cx="0" cy="18" 
+      rx="5" ry="6.5" 
+      fill="url(#eyeMiddle)"
+    />
+    
+    <!-- Gold inner eye -->
+    <ellipse 
+      cx="0" cy="17" 
+      rx="3" ry="4" 
+      fill="url(#eyeCenter)"
+    />
+    
+    <!-- Bright center highlight -->
+    <ellipse 
+      cx="-0.5" cy="15.5" 
+      rx="1.2" ry="1.5" 
+      fill="#E8D4B8"
+      opacity="0.9"
+    />
+    
+    <!-- Tiny specular highlight -->
+    <circle 
+      cx="-1" cy="14.5" 
+      r="0.5" 
+      fill="#FFF5E6"
+      opacity="0.8"
+    />
+    
+    <!-- Fine detail lines on eye -->
+    <path d="M -5 12 Q -2 14, 0 13" stroke="#3D5A3D" stroke-width="0.3" fill="none" opacity="0.5"/>
+    <path d="M 5 12 Q 2 14, 0 13" stroke="#3D5A3D" stroke-width="0.3" fill="none" opacity="0.5"/>
+    <path d="M -4 24 Q -1 22, 0 23" stroke="#2D4A3E" stroke-width="0.3" fill="none" opacity="0.5"/>
+    <path d="M 4 24 Q 1 22, 0 23" stroke="#2D4A3E" stroke-width="0.3" fill="none" opacity="0.5"/>
+  </g>
+  
+  <!-- Main flute body - scaled and positioned -->
+  <g transform="translate(90, 135) rotate(-8) scale(2.5)">
+    <rect 
+      x="-28" y="-3.5" 
+      width="56" height="7" 
+      rx="3.5" ry="3.5"
+      fill="url(#fluteGold)"
+    />
+    
+    <!-- Subtle top highlight -->
+    <rect 
+      x="-28" y="-3.5" 
+      width="56" height="1.5" 
+      rx="0.75"
+      fill="rgba(255,255,255,0.12)"
+    />
+    
+    <!-- Finger holes -->
+    <circle cx="-16" cy="0" r="1.5" fill="url(#holeColor)"/>
+    <circle cx="-8" cy="0" r="1.5" fill="url(#holeColor)"/>
+    <circle cx="0" cy="0" r="1.5" fill="url(#holeColor)"/>
+    <circle cx="8" cy="0" r="1.5" fill="url(#holeColor)"/>
+    <circle cx="16" cy="0" r="1.5" fill="url(#holeColor)"/>
+    
+    <!-- Blowing hole -->
+    <circle cx="-23" cy="0" r="1.8" fill="url(#holeColor)"/>
+    
+    <!-- End bands -->
+    <rect x="-27" y="-3.5" width="1" height="7" rx="0.5" fill="rgba(90,60,30,0.5)"/>
+    <rect x="26" y="-3.5" width="1" height="7" rx="0.5" fill="rgba(90,60,30,0.5)"/>
+  </g>
+</svg>
