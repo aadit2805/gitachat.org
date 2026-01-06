@@ -4,7 +4,7 @@ aiohttp==3.10.11
 tqdm==4.66.5
 
 # Translation (translate.py)
-requests==2.32.3
+requests==2.32.4
 google-cloud-translate==3.16.0
 
 # ML/AI (model.py)
