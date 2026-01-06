@@ -25,7 +25,24 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: "GitaChat",
-  description: "Wisdom from the Bhagavad Gita",
+  description: "Ask a question. Receive guidance from the Bhagavad Gita.",
+  metadataBase: new URL("https://gitachat.org"),
+  openGraph: {
+    title: "GitaChat",
+    description: "Ask a question. Receive guidance from the Bhagavad Gita.",
+    url: "https://gitachat.org",
+    siteName: "GitaChat",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GitaChat",
+    description: "Ask a question. Receive guidance from the Bhagavad Gita.",
+  },
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#1a1410" },
+  ],
 };
 
 export default function RootLayout({
