@@ -16,14 +16,14 @@ GitaChat uses semantic search to find the most relevant verse from the Bhagavad 
 **Backend**
 - Python + FastAPI
 - Sentence Transformers (BGE embeddings)
-- Pinecone (vector database)
+- Pinecone (vector DB)
 - Hosted on Railway
 
 ## How It Works
 
 1. Your question gets converted into a vector embedding
 2. We search Pinecone for the most similar verse
-3. Return the verse with a pre-computed GPT summary
+3. Return the verse with additional commentary that best suits your query
 
 ## Local Development
 
