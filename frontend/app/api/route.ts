@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    console.log('Sending query:', body.query);
+    console.log("Sending query:", body.query);
 
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
     const response = await fetch(`${backendUrl}/api/query`, {
@@ -14,9 +16,9 @@ export async function POST(req: Request) {
       body: JSON.stringify({ query: body.query }),
     });
 
-    console.log('Backend Response Status:', response.status);
+    console.log("Backend Response Status:", response.status);
     const data = await response.json();
-    console.log('Backend Response Data:', data);
+    console.log("Backend Response Data:", data);
 
     if (!response.ok) {
       throw new Error(`Backend server error: ${response.status}`);
@@ -26,7 +28,22 @@ export async function POST(req: Request) {
       throw new Error(data.error);
     }
 
-    return NextResponse.json(data.data);
+    const responseData = data.data;
+
+    // Save to history if user is authenticated and supabase is configured
+    const { userId } = await auth();
+    if (userId && supabase) {
+      await supabase.from("query_history").insert({
+        user_id: userId,
+        query: body.query,
+        chapter: responseData.chapter,
+        verse: responseData.verse,
+        translation: responseData.translation,
+        summarized_commentary: responseData.summarized_commentary,
+      });
+    }
+
+    return NextResponse.json(responseData);
   } catch (err) {
     console.error("Error:", err);
     return NextResponse.json(
@@ -34,7 +51,7 @@ export async function POST(req: Request) {
         error: "Backend server no response.",
         details: err instanceof Error ? err.message : "Unknown error",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
