@@ -31,16 +31,21 @@ export async function POST(req: Request) {
     const responseData = data.data;
 
     // Save to history if user is authenticated and supabase is configured
+    // Fire-and-forget: don't block the response waiting for DB write
     const { userId } = await auth();
     if (userId && supabase) {
-      await supabase.from("query_history").insert({
-        user_id: userId,
-        query: body.query,
-        chapter: responseData.chapter,
-        verse: responseData.verse,
-        translation: responseData.translation,
-        summarized_commentary: responseData.summarized_commentary,
-      });
+      supabase
+        .from("query_history")
+        .insert({
+          user_id: userId,
+          query: body.query,
+          chapter: responseData.chapter,
+          verse: responseData.verse,
+          translation: responseData.translation,
+          summarized_commentary: responseData.summarized_commentary,
+        })
+        .then(() => console.log("Query saved to history"))
+        .catch((err) => console.error("Failed to save query history:", err));
     }
 
     return NextResponse.json(responseData);
