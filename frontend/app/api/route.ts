@@ -44,8 +44,10 @@ export async function POST(req: Request) {
           translation: responseData.translation,
           summarized_commentary: responseData.summarized_commentary,
         })
-        .then(() => console.log("Query saved to history"))
-        .catch((err) => console.error("Failed to save query history:", err));
+        .then(
+          () => console.log("Query saved to history"),
+          (err) => console.error("Failed to save query history:", err)
+        );
     }
 
     return NextResponse.json(responseData);
