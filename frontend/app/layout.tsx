@@ -25,12 +25,14 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "GitaChat",
-  description: "Ask a question. Receive guidance from the Bhagavad Gita.",
+  title: "GitaChat - Ask a Question, Receive Guidance from the Bhagavad Gita",
+  description: "Ask a question and receive wisdom from the Bhagavad Gita. GitaChat provides personalized guidance based on ancient spiritual teachings to help you find answers to life's questions.",
   metadataBase: new URL("https://gitachat.org"),
+  keywords: ["Bhagavad Gita", "spiritual guidance", "wisdom", "Krishna", "philosophy", "life questions", "spirituality"],
+  authors: [{ name: "GitaChat" }],
   openGraph: {
-    title: "GitaChat",
-    description: "Ask a question. Receive guidance from the Bhagavad Gita.",
+    title: "GitaChat - Wisdom from the Bhagavad Gita",
+    description: "Ask a question and receive wisdom from the Bhagavad Gita. Find guidance based on ancient spiritual teachings.",
     url: "https://gitachat.org",
     siteName: "GitaChat",
     locale: "en_US",
@@ -38,12 +40,30 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "GitaChat",
-    description: "Ask a question. Receive guidance from the Bhagavad Gita.",
+    title: "GitaChat - Wisdom from the Bhagavad Gita",
+    description: "Ask a question and receive wisdom from the Bhagavad Gita. Find guidance based on ancient spiritual teachings.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#1a1410" },
   ],
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/apple-icon.svg',
+  },
 };
 
 export default function RootLayout({
