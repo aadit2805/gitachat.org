@@ -72,9 +72,65 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: "hsl(28, 85%, 52%)",
+          colorBackground: "hsl(35, 30%, 95%)",
+          colorInputBackground: "hsl(35, 25%, 98%)",
+          colorInputText: "hsl(25, 30%, 20%)",
+          colorText: "hsl(25, 30%, 20%)",
+          colorTextSecondary: "hsl(25, 15%, 45%)",
+          colorDanger: "hsl(0, 60%, 50%)",
+          borderRadius: "0.5rem",
+          fontFamily: "var(--font-sans)",
+        },
+        elements: {
+          formButtonPrimary:
+            "bg-[hsl(28,85%,52%)] hover:bg-[hsl(28,85%,47%)] text-white font-medium",
+          card: "bg-[hsl(35,30%,95%)] border border-[hsl(35,20%,88%)] shadow-xl",
+          headerTitle: "text-[hsl(25,30%,20%)] text-xl font-medium",
+          headerSubtitle: "text-[hsl(25,15%,45%)]",
+          socialButtonsBlockButton:
+            "bg-[hsl(35,25%,98%)] border-[hsl(35,20%,85%)] text-[hsl(25,30%,20%)] hover:bg-[hsl(35,25%,93%)]",
+          socialButtonsBlockButtonText: "text-[hsl(25,30%,20%)] font-normal",
+          dividerLine: "bg-[hsl(35,20%,85%)]",
+          dividerText: "text-[hsl(25,15%,55%)]",
+          formFieldLabel: "text-[hsl(25,25%,30%)]",
+          formFieldInput:
+            "bg-[hsl(35,25%,98%)] border-[hsl(35,20%,85%)] text-[hsl(25,30%,20%)] focus:border-[hsl(28,85%,52%)] focus:ring-[hsl(28,85%,52%)]",
+          footerActionLink: "text-[hsl(28,85%,45%)] hover:text-[hsl(28,85%,40%)]",
+          identityPreview: "bg-[hsl(35,25%,98%)] border-[hsl(35,20%,85%)]",
+          identityPreviewText: "text-[hsl(25,30%,20%)]",
+          identityPreviewEditButton: "text-[hsl(28,85%,45%)]",
+          userButtonPopoverCard: "bg-[hsl(35,30%,95%)] border-[hsl(35,20%,88%)]",
+          userButtonPopoverActionButton: "text-[hsl(25,30%,20%)] hover:bg-[hsl(35,25%,90%)]",
+          userButtonPopoverActionButtonText: "text-[hsl(25,30%,20%)]",
+          userButtonPopoverActionButtonIcon: "text-[hsl(25,15%,45%)]",
+          userButtonPopoverFooter: "border-t-[hsl(35,20%,88%)]",
+          userPreviewMainIdentifier: "text-[hsl(25,30%,20%)]",
+          userPreviewSecondaryIdentifier: "text-[hsl(25,15%,45%)]",
+        },
+      }}
+    >
       <html lang="en">
         <body className={`${cormorant.variable} ${dmSans.variable} font-serif`}>
+          <SignedIn>
+            <nav className="fixed left-6 top-6 z-50 flex items-center gap-4">
+              <Link
+                href="/verse-of-the-day"
+                className="font-sans text-sm text-muted-foreground/60 transition-colors hover:text-foreground"
+              >
+                For You
+              </Link>
+              <Link
+                href="/history"
+                className="font-sans text-sm text-muted-foreground/60 transition-colors hover:text-foreground"
+              >
+                History
+              </Link>
+            </nav>
+          </SignedIn>
           <header className="fixed right-6 top-6 z-50 flex items-center gap-4">
             <SignedOut>
               <SignInButton mode="modal">
@@ -84,12 +140,6 @@ export default function RootLayout({
               </SignInButton>
             </SignedOut>
             <SignedIn>
-              <Link
-                href="/history"
-                className="font-sans text-sm text-muted-foreground/60 transition-colors hover:text-foreground"
-              >
-                History
-              </Link>
               <UserButton
                 appearance={{
                   elements: {
