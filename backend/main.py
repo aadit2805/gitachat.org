@@ -49,9 +49,9 @@ class Query(BaseModel):
     query: str = Field(..., min_length=1, max_length=MAX_QUERY_LENGTH)
 
 
-class PersonalizedVerseRequest(BaseModel):
-    queries: list[str] = Field(..., min_length=1, max_length=50)
-    seen_verses: list[str] = Field(default=[])
+class VerseRequest(BaseModel):
+    chapter: int = Field(..., ge=1, le=18)
+    verse: int = Field(..., ge=1)
 
 
 @app.get("/health")
@@ -76,18 +76,20 @@ async def query_gita(request: Request, query: Query) -> dict:
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-@app.post("/api/personalized-verse", response_model=dict)
-@limiter.limit("10/minute")
-async def personalized_verse(request: Request, data: PersonalizedVerseRequest) -> dict:
+@app.post("/api/verse", response_model=dict)
+@limiter.limit("30/minute")
+async def get_specific_verse(request: Request, verse_req: VerseRequest) -> dict:
     """
-    Get a personalized verse based on user's query history themes.
+    Get a specific verse by chapter and verse number.
     """
     try:
-        from model import get_personalized_verse
-        result = get_personalized_verse(data.queries, data.seen_verses)
+        from model import get_verse
+        result = get_verse(verse_req.chapter, verse_req.verse)
         if not result:
-            raise HTTPException(status_code=404, detail="No verse found")
+            raise HTTPException(status_code=404, detail="Verse not found")
         return {"status": "success", "data": result}
+    except HTTPException:
+        raise
     except Exception as e:
-        logging.error(f"Personalized verse error: {str(e)}")
+        logging.error(f"Error fetching verse: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
