@@ -1,9 +1,22 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { supabase } from "@/lib/supabase";
+import { rateLimit, getClientId } from "@/lib/rate-limit";
 
-export async function GET() {
+const RATE_LIMIT = { limit: 30, windowMs: 60000 }; // 30 requests per minute
+
+export async function GET(req: Request) {
   try {
+    // Rate limiting
+    const clientId = getClientId(req);
+    const rateLimitResult = rateLimit(`history:${clientId}`, RATE_LIMIT);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429 }
+      );
+    }
+
     const { userId } = await auth();
 
     if (!userId) {
