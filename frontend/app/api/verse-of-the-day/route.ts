@@ -78,7 +78,7 @@ export async function GET(req: Request) {
     // Call backend for personalized verse (with timeout)
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 9000); // 9s timeout (Vercel hobby limit is 10s)
 
     let response;
     try {

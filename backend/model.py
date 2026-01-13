@@ -51,27 +51,19 @@ def get_personalized_verse(queries: list[str], seen_verses: list[str]):
     Returns:
         Verse dict with chapter, verse, translation, commentary, and matched_theme
     """
-    import numpy as np
-
     if not queries:
         return None
 
     # Convert seen_verses to a set for fast lookup
     seen_set = set(seen_verses) if seen_verses else set()
 
-    # Embed all queries
-    query_instructions = [
-        f"Represent this sentence for searching relevant passages: {q}"
-        for q in queries
-    ]
-    embeddings = embedding_model.encode(query_instructions)
-
-    # Average embeddings to get theme vector
-    theme_vector = np.mean(embeddings, axis=0).tolist()
+    # Use just the first query to keep it fast (single embedding, not batch)
+    query_with_instruction = f"Represent this sentence for searching relevant passages: {queries[0]}"
+    query_embedding = embedding_model.encode(query_with_instruction).tolist()
 
     # Query for similar verses (get extra to filter out seen ones)
     results = index.query(
-        vector=theme_vector,
+        vector=query_embedding,
         top_k=20,
         include_metadata=True
     )
@@ -94,15 +86,12 @@ def get_personalized_verse(queries: list[str], seen_verses: list[str]):
 
     metadata = selected_match["metadata"]
 
-    # Use first query as the matched theme (skip expensive similarity calc)
-    matched_theme = queries[0]
-
     return {
         "chapter": metadata["chapter"],
         "verse": metadata["verse"],
         "translation": metadata["translation"],
         "summarized_commentary": metadata.get("summary", ""),
-        "matched_theme": matched_theme
+        "matched_theme": queries[0]
     }
 
 
