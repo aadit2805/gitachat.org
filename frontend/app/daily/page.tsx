@@ -32,7 +32,8 @@ export default function DailyPage() {
   useEffect(() => {
     async function fetchVerse() {
       try {
-        const res = await fetch("/api/daily");
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const res = await fetch(`/api/daily?tz=${encodeURIComponent(timezone)}`);
         if (!res.ok) {
           if (res.status === 401) {
             setError("Please sign in to see your daily verse");

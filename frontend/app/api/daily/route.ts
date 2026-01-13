@@ -19,8 +19,12 @@ function getAllVerses(): { chapter: number; verse: number }[] {
   return verses;
 }
 
-function getTodayDateString(): string {
-  return new Date().toISOString().split("T")[0];
+function getTodayDateString(timezone: string): string {
+  try {
+    return new Date().toLocaleDateString("en-CA", { timeZone: timezone }); // en-CA gives YYYY-MM-DD format
+  } catch {
+    return new Date().toISOString().split("T")[0];
+  }
 }
 
 export async function GET(req: Request) {
@@ -47,7 +51,10 @@ export async function GET(req: Request) {
       );
     }
 
-    const today = getTodayDateString();
+    // Get user's timezone from query params
+    const { searchParams } = new URL(req.url);
+    const timezone = searchParams.get("tz") || "UTC";
+    const today = getTodayDateString(timezone);
 
     // Check for cached daily verse
     const { data: cached } = await supabase
