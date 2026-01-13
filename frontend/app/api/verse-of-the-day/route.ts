@@ -75,16 +75,33 @@ export async function GET(req: Request) {
       ...new Set(history.map((h) => `${h.chapter}:${h.verse}`)),
     ];
 
-    // Call backend for personalized verse
+    // Call backend for personalized verse (with timeout)
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
-    const response = await fetch(`${backendUrl}/api/personalized-verse`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        queries: queries.slice(0, 20), // Limit to recent 20 unique queries
-        seen_verses: seenVerses,
-      }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+
+    let response;
+    try {
+      response = await fetch(`${backendUrl}/api/personalized-verse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          queries: queries.slice(0, 5), // Limit to 5 queries for speed
+          seen_verses: seenVerses,
+        }),
+        signal: controller.signal,
+      });
+    } catch (fetchErr) {
+      clearTimeout(timeoutId);
+      if (fetchErr instanceof Error && fetchErr.name === "AbortError") {
+        return NextResponse.json(
+          { error: "Request timed out. Please try again." },
+          { status: 504 }
+        );
+      }
+      throw fetchErr;
+    }
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error("Backend error");
