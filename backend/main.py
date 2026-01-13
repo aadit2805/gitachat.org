@@ -49,6 +49,11 @@ class Query(BaseModel):
     query: str = Field(..., min_length=1, max_length=MAX_QUERY_LENGTH)
 
 
+class PersonalizedVerseRequest(BaseModel):
+    queries: list[str] = Field(..., min_length=1, max_length=50)
+    seen_verses: list[str] = Field(default=[])
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
@@ -63,9 +68,26 @@ async def query_gita(request: Request, query: Query) -> dict:
     try:
         from model import match
         result = match(query.query)
-        if not result:  
+        if not result:
             raise HTTPException(status_code=404, detail="No matches found")
         return {"status": "success", "data": result}
     except Exception as e:
-        logging.error(f"Error occurred: {str(e)}")  
+        logging.error(f"Error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+@app.post("/api/personalized-verse", response_model=dict)
+@limiter.limit("10/minute")
+async def personalized_verse(request: Request, data: PersonalizedVerseRequest) -> dict:
+    """
+    Get a personalized verse based on user's query history themes.
+    """
+    try:
+        from model import get_personalized_verse
+        result = get_personalized_verse(data.queries, data.seen_verses)
+        if not result:
+            raise HTTPException(status_code=404, detail="No verse found")
+        return {"status": "success", "data": result}
+    except Exception as e:
+        logging.error(f"Personalized verse error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
