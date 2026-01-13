@@ -51,8 +51,13 @@ def get_personalized_verse(queries: list[str], seen_verses: list[str]):
     Returns:
         Verse dict with chapter, verse, translation, commentary, and matched_theme
     """
+    import numpy as np
+
     if not queries:
         return None
+
+    # Convert seen_verses to a set for fast lookup
+    seen_set = set(seen_verses) if seen_verses else set()
 
     # Embed all queries
     query_instructions = [
@@ -62,52 +67,35 @@ def get_personalized_verse(queries: list[str], seen_verses: list[str]):
     embeddings = embedding_model.encode(query_instructions)
 
     # Average embeddings to get theme vector
-    import numpy as np
     theme_vector = np.mean(embeddings, axis=0).tolist()
 
-    # Build filter to exclude seen verses
-    filter_dict = None
-    if seen_verses:
-        # Pinecone filter: exclude verses user has already seen
-        filter_dict = {
-            "verse_id": {"$nin": seen_verses}
-        }
-
-    # Query for similar verses, get a few candidates
+    # Query for similar verses (get extra to filter out seen ones)
     results = index.query(
         vector=theme_vector,
-        top_k=10,
-        include_metadata=True,
-        filter=filter_dict
+        top_k=20,
+        include_metadata=True
     )
-
-    if not results["matches"]:
-        # Fallback: no filter if all verses seen
-        results = index.query(
-            vector=theme_vector,
-            top_k=1,
-            include_metadata=True
-        )
 
     if not results["matches"]:
         return None
 
-    # Pick the best unseen match
-    match = results["matches"][0]
-    metadata = match["metadata"]
+    # Find first unseen verse
+    selected_match = None
+    for m in results["matches"]:
+        meta = m["metadata"]
+        verse_key = f"{meta['chapter']}:{meta['verse']}"
+        if verse_key not in seen_set:
+            selected_match = m
+            break
 
-    # Find which query theme was closest (for "why this verse" reasoning)
-    matched_theme = queries[0] if queries else None
-    if len(queries) > 1:
-        # Find the query most similar to this verse
-        verse_text = metadata.get("translation", "")
-        verse_embedding = embedding_model.encode(
-            f"Represent this sentence for searching relevant passages: {verse_text}"
-        )
-        similarities = [
-            np.dot(verse_embedding, emb) for emb in embeddings
-        ]
-        matched_theme = queries[np.argmax(similarities)]
+    # Fallback to first match if all are seen
+    if not selected_match:
+        selected_match = results["matches"][0]
+
+    metadata = selected_match["metadata"]
+
+    # Use first query as the matched theme (skip expensive similarity calc)
+    matched_theme = queries[0]
 
     return {
         "chapter": metadata["chapter"],
