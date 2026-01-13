@@ -16,6 +16,7 @@ pinecone==5.4.2
 # Web API (main.py)
 fastapi==0.115.5
 uvicorn==0.32.0
+slowapi==0.1.9
 
 # Environment variables
 python-dotenv==1.0.1
