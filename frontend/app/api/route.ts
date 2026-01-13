@@ -1,11 +1,39 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { supabase } from "@/lib/supabase";
+import { rateLimit, getClientId } from "@/lib/rate-limit";
+
+const MAX_QUERY_LENGTH = 500;
+const RATE_LIMIT = { limit: 20, windowMs: 60000 }; // 20 requests per minute
 
 export async function POST(req: Request) {
   try {
+    // Rate limiting
+    const clientId = getClientId(req);
+    const rateLimitResult = rateLimit(clientId, RATE_LIMIT);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
-    console.log("Sending query:", body.query);
+
+    // Input validation
+    const query = body.query;
+    if (typeof query !== "string" || !query.trim()) {
+      return NextResponse.json(
+        { error: "Query is required" },
+        { status: 400 }
+      );
+    }
+    if (query.length > MAX_QUERY_LENGTH) {
+      return NextResponse.json(
+        { error: "Query is too long" },
+        { status: 400 }
+      );
+    }
 
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
     const response = await fetch(`${backendUrl}/api/query`, {
@@ -13,12 +41,10 @@ export async function POST(req: Request) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ query: body.query }),
+      body: JSON.stringify({ query: query.trim() }),
     });
 
-    console.log("Backend Response Status:", response.status);
     const data = await response.json();
-    console.log("Backend Response Data:", data);
 
     if (!response.ok) {
       throw new Error(`Backend server error: ${response.status}`);
@@ -38,26 +64,21 @@ export async function POST(req: Request) {
         .from("query_history")
         .insert({
           user_id: userId,
-          query: body.query,
+          query: query.trim(),
           chapter: responseData.chapter,
           verse: responseData.verse,
           translation: responseData.translation,
           summarized_commentary: responseData.summarized_commentary,
         })
-        .then(
-          () => console.log("Query saved to history"),
-          (err) => console.error("Failed to save query history:", err)
-        );
+        .then(() => {}, () => {});  // Silent fire-and-forget
     }
 
     return NextResponse.json(responseData);
   } catch (err) {
-    console.error("Error:", err);
+    // Log detailed error server-side only
+    console.error("Query error:", err instanceof Error ? err.message : err);
     return NextResponse.json(
-      {
-        error: "Backend server no response.",
-        details: err instanceof Error ? err.message : "Unknown error",
-      },
+      { error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }
