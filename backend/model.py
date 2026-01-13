@@ -15,6 +15,28 @@ pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 index = pc.Index(os.getenv("PINECONE_INDEX"))
 
 
+def get_verse(chapter: int, verse: int):
+    """Fetch a specific verse by chapter and verse number."""
+    # Query Pinecone for the specific verse using metadata filter
+    results = index.query(
+        vector=[0] * 768,  # Dummy vector, we're filtering by metadata
+        top_k=1,
+        include_metadata=True,
+        filter={"chapter": chapter, "verse": verse}
+    )
+
+    if not results["matches"]:
+        return None
+
+    metadata = results["matches"][0]["metadata"]
+    return {
+        "chapter": metadata["chapter"],
+        "verse": metadata["verse"],
+        "translation": metadata["translation"],
+        "summarized_commentary": metadata.get("summary", "")
+    }
+
+
 def match(query):
     # BGE models work best with instruction prefix for queries
     query_with_instruction = f"Represent this sentence for searching relevant passages: {query}"
@@ -37,61 +59,6 @@ def match(query):
         "verse": metadata["verse"],
         "translation": metadata["translation"],
         "summarized_commentary": metadata.get("summary", "")
-    }
-
-
-def get_personalized_verse(queries: list[str], seen_verses: list[str]):
-    """
-    Get a personalized verse based on user's query themes.
-
-    Args:
-        queries: List of user's past queries
-        seen_verses: List of "chapter:verse" strings to exclude
-
-    Returns:
-        Verse dict with chapter, verse, translation, commentary, and matched_theme
-    """
-    if not queries:
-        return None
-
-    # Convert seen_verses to a set for fast lookup
-    seen_set = set(seen_verses) if seen_verses else set()
-
-    # Use just the first query to keep it fast (single embedding, not batch)
-    query_with_instruction = f"Represent this sentence for searching relevant passages: {queries[0]}"
-    query_embedding = embedding_model.encode(query_with_instruction).tolist()
-
-    # Query for similar verses (get extra to filter out seen ones)
-    results = index.query(
-        vector=query_embedding,
-        top_k=20,
-        include_metadata=True
-    )
-
-    if not results["matches"]:
-        return None
-
-    # Find first unseen verse
-    selected_match = None
-    for m in results["matches"]:
-        meta = m["metadata"]
-        verse_key = f"{meta['chapter']}:{meta['verse']}"
-        if verse_key not in seen_set:
-            selected_match = m
-            break
-
-    # Fallback to first match if all are seen
-    if not selected_match:
-        selected_match = results["matches"][0]
-
-    metadata = selected_match["metadata"]
-
-    return {
-        "chapter": metadata["chapter"],
-        "verse": metadata["verse"],
-        "translation": metadata["translation"],
-        "summarized_commentary": metadata.get("summary", ""),
-        "matched_theme": queries[0]
     }
 
 
