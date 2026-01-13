@@ -118,10 +118,10 @@ export default function RootLayout({
           <SignedIn>
             <nav className="fixed left-6 top-6 z-50 flex items-center gap-4">
               <Link
-                href="/verse-of-the-day"
+                href="/daily"
                 className="font-sans text-sm text-muted-foreground/60 transition-colors hover:text-foreground"
               >
-                For You
+                Daily
               </Link>
               <Link
                 href="/history"

@@ -5,15 +5,29 @@ import { rateLimit, getClientId } from "@/lib/rate-limit";
 
 const RATE_LIMIT = { limit: 10, windowMs: 60000 };
 
+// Bhagavad Gita verse counts per chapter (18 chapters, 700 verses total)
+const VERSES_PER_CHAPTER = [47, 72, 43, 42, 29, 47, 30, 28, 34, 42, 55, 20, 35, 27, 20, 24, 28, 78];
+
+// Generate list of all verse references
+function getAllVerses(): { chapter: number; verse: number }[] {
+  const verses: { chapter: number; verse: number }[] = [];
+  VERSES_PER_CHAPTER.forEach((count, idx) => {
+    for (let v = 1; v <= count; v++) {
+      verses.push({ chapter: idx + 1, verse: v });
+    }
+  });
+  return verses;
+}
+
 function getTodayDateString(): string {
-  return new Date().toISOString().split("T")[0]; // "2024-01-15"
+  return new Date().toISOString().split("T")[0];
 }
 
 export async function GET(req: Request) {
   try {
     // Rate limiting
     const clientId = getClientId(req);
-    const rateLimitResult = rateLimit(`votd:${clientId}`, RATE_LIMIT);
+    const rateLimitResult = rateLimit(`daily:${clientId}`, RATE_LIMIT);
     if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: "Too many requests" },
@@ -35,7 +49,7 @@ export async function GET(req: Request) {
 
     const today = getTodayDateString();
 
-    // Check for cached verse of the day
+    // Check for cached daily verse
     const { data: cached } = await supabase
       .from("daily_verse")
       .select("*")
@@ -49,62 +63,41 @@ export async function GET(req: Request) {
         verse: cached.verse,
         translation: cached.translation,
         summarized_commentary: cached.summarized_commentary,
-        matched_theme: cached.matched_theme,
         cached: true,
       });
     }
 
-    // Fetch user's query history
+    // Get verses user has already seen
     const { data: history } = await supabase
       .from("query_history")
-      .select("query, chapter, verse")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(20);
+      .select("chapter, verse")
+      .eq("user_id", userId);
 
-    if (!history || history.length === 0) {
-      return NextResponse.json(
-        { error: "No query history found. Ask some questions first!" },
-        { status: 404 }
-      );
-    }
+    const seenSet = new Set(
+      (history || []).map((h) => `${h.chapter}:${h.verse}`)
+    );
 
-    // Extract unique queries and seen verses
-    const queries = [...new Set(history.map((h) => h.query))];
-    const seenVerses = [
-      ...new Set(history.map((h) => `${h.chapter}:${h.verse}`)),
-    ];
+    // Get all verses and filter out seen ones
+    const allVerses = getAllVerses();
+    const unseenVerses = allVerses.filter(
+      (v) => !seenSet.has(`${v.chapter}:${v.verse}`)
+    );
 
-    // Call backend for personalized verse (with timeout)
+    // Pick a random unseen verse (or any random if all seen)
+    const candidates = unseenVerses.length > 0 ? unseenVerses : allVerses;
+    const randomIndex = Math.floor(Math.random() * candidates.length);
+    const selected = candidates[randomIndex];
+
+    // Fetch the verse from backend
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 9000); // 9s timeout (Vercel hobby limit is 10s)
-
-    let response;
-    try {
-      response = await fetch(`${backendUrl}/api/personalized-verse`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          queries: queries.slice(0, 5), // Limit to 5 queries for speed
-          seen_verses: seenVerses,
-        }),
-        signal: controller.signal,
-      });
-    } catch (fetchErr) {
-      clearTimeout(timeoutId);
-      if (fetchErr instanceof Error && fetchErr.name === "AbortError") {
-        return NextResponse.json(
-          { error: "Request timed out. Please try again." },
-          { status: 504 }
-        );
-      }
-      throw fetchErr;
-    }
-    clearTimeout(timeoutId);
+    const response = await fetch(`${backendUrl}/api/verse`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chapter: selected.chapter, verse: selected.verse }),
+    });
 
     if (!response.ok) {
-      throw new Error("Backend error");
+      throw new Error("Failed to fetch verse from backend");
     }
 
     const data = await response.json();
@@ -118,7 +111,7 @@ export async function GET(req: Request) {
       verse: verse.verse,
       translation: verse.translation,
       summarized_commentary: verse.summarized_commentary,
-      matched_theme: verse.matched_theme,
+      matched_theme: null,
     });
 
     return NextResponse.json({
@@ -126,9 +119,9 @@ export async function GET(req: Request) {
       cached: false,
     });
   } catch (err) {
-    console.error("Verse of the day error:", err instanceof Error ? err.message : err);
+    console.error("Daily verse error:", err instanceof Error ? err.message : err);
     return NextResponse.json(
-      { error: "Failed to get verse of the day" },
+      { error: "Failed to get daily verse" },
       { status: 500 }
     );
   }
