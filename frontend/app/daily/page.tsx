@@ -22,7 +22,8 @@ export default function DailyPage() {
     queryKey: ["daily-verse"],
     queryFn: fetchDailyVerse,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: false,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 
   if (isLoading) {
