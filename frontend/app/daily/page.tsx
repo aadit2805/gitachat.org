@@ -2,29 +2,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { renderMarkdown, type VerseData } from "@/lib/utils";
 
-function renderMarkdown(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return (
-        <strong key={i} className="font-semibold text-foreground">
-          {part.slice(2, -2)}
-        </strong>
-      );
-    }
-    return part;
-  });
-}
-
-interface DailyVerse {
-  chapter: number;
-  verse: number;
-  translation: string;
-  summarized_commentary: string;
-}
-
-async function fetchDailyVerse(): Promise<DailyVerse> {
+async function fetchDailyVerse(): Promise<VerseData> {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const res = await fetch(`/api/daily?tz=${encodeURIComponent(timezone)}`);
 

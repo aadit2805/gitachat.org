@@ -2,26 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { renderMarkdown, type VerseData } from "@/lib/utils";
 
-function renderMarkdown(text: string) {
-  // Convert **bold** to <strong>
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>;
-    }
-    return part;
-  });
-}
-
-interface GitaResponse {
-  chapter: number;
-  verse: number;
-  translation: string;
-  summarized_commentary: string;
-}
-
-async function submitQuery(query: string): Promise<GitaResponse> {
+async function submitQuery(query: string): Promise<VerseData> {
   const res = await fetch("/api", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
