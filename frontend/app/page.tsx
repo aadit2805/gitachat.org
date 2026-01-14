@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { renderMarkdown, type VerseData } from "@/lib/utils";
+import { VerseActions } from "@/components/VerseActions";
 
 async function submitQuery(query: string): Promise<VerseData> {
   const res = await fetch("/api", {
@@ -150,6 +151,15 @@ export default function Home() {
                 <p className="text-base leading-loose tracking-wide text-foreground/70 sm:text-lg">
                   {renderMarkdown(mutation.data.summarized_commentary)}
                 </p>
+              </div>
+
+              <div className="mt-10">
+                <VerseActions
+                  chapter={mutation.data.chapter}
+                  verse={mutation.data.verse}
+                  translation={mutation.data.translation}
+                  summarized_commentary={mutation.data.summarized_commentary}
+                />
               </div>
             </article>
           )}

@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { renderMarkdown, type VerseData } from "@/lib/utils";
+import { VerseActions } from "@/components/VerseActions";
 
 async function fetchDailyVerse(): Promise<VerseData> {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -92,6 +93,15 @@ export default function DailyPage() {
             <p className="text-base leading-loose tracking-wide text-foreground/70 sm:text-lg">
               {renderMarkdown(verse.summarized_commentary)}
             </p>
+          </div>
+
+          <div className="mt-10">
+            <VerseActions
+              chapter={verse.chapter}
+              verse={verse.verse}
+              translation={verse.translation}
+              summarized_commentary={verse.summarized_commentary}
+            />
           </div>
         </article>
 
