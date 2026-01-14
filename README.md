@@ -9,6 +9,7 @@ GitaChat uses semantic search to find the most relevant verse from the Bhagavad 
 **Frontend**
 - Next.js + TypeScript
 - Tailwind CSS
+- TanStack Query
 - Clerk (auth)
 - Supabase (query history)
 - Hosted on Vercel

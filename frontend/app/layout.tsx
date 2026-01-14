@@ -8,6 +8,7 @@ import {
   SignedOut,
   UserButton,
 } from "@clerk/nextjs";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -149,7 +150,7 @@ export default function RootLayout({
               />
             </SignedIn>
           </header>
-          {children}
+          <Providers>{children}</Providers>
         </body>
       </html>
     </ClerkProvider>

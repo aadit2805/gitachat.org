@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import type { QueryHistoryRecord } from "@/lib/supabase";
 
@@ -29,37 +30,28 @@ function formatDate(dateString: string) {
   });
 }
 
+async function fetchHistory(): Promise<QueryHistoryRecord[]> {
+  const res = await fetch("/api/history");
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to fetch history");
+  }
+
+  return res.json();
+}
+
 export default function HistoryPage() {
-  const [history, setHistory] = useState<QueryHistoryRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [selectedItem, setSelectedItem] = useState<QueryHistoryRecord | null>(
-    null
-  );
+  const [selectedItem, setSelectedItem] = useState<QueryHistoryRecord | null>(null);
 
-  useEffect(() => {
-    async function fetchHistory() {
-      try {
-        const res = await fetch("/api/history");
-        if (!res.ok) {
-          if (res.status === 401) {
-            setError("Please sign in to view your history");
-            return;
-          }
-          throw new Error("Failed to fetch history");
-        }
-        const data = await res.json();
-        setHistory(data);
-      } catch {
-        setError("Failed to load history");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchHistory();
-  }, []);
+  const { data: history, isLoading, error } = useQuery({
+    queryKey: ["history"],
+    queryFn: fetchHistory,
+    staleTime: 30 * 1000, // 30 seconds
+    retry: false,
+  });
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
         <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-20 sm:px-10 md:px-12">
@@ -81,7 +73,9 @@ export default function HistoryPage() {
           >
             ← Back
           </Link>
-          <p className="font-sans text-sm text-saffron">{error}</p>
+          <p className="font-sans text-sm text-saffron">
+            {error instanceof Error ? error.message : "Failed to load history"}
+          </p>
         </div>
       </div>
     );
@@ -149,7 +143,7 @@ export default function HistoryPage() {
           History
         </h1>
 
-        {history.length === 0 ? (
+        {!history || history.length === 0 ? (
           <p className="font-sans text-muted-foreground/60">
             No queries yet. Ask your first question!
           </p>

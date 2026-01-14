@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 
 function renderMarkdown(text: string) {
@@ -24,39 +24,27 @@ interface DailyVerse {
   summarized_commentary: string;
 }
 
+async function fetchDailyVerse(): Promise<DailyVerse> {
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const res = await fetch(`/api/daily?tz=${encodeURIComponent(timezone)}`);
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to fetch verse");
+  }
+
+  return res.json();
+}
+
 export default function DailyPage() {
-  const [verse, setVerse] = useState<DailyVerse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data: verse, isLoading, error } = useQuery({
+    queryKey: ["daily-verse"],
+    queryFn: fetchDailyVerse,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: false,
+  });
 
-  useEffect(() => {
-    async function fetchVerse() {
-      try {
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const res = await fetch(`/api/daily?tz=${encodeURIComponent(timezone)}`);
-        if (!res.ok) {
-          if (res.status === 401) {
-            setError("Please sign in to see your daily verse");
-            return;
-          }
-          if (res.status === 404) {
-            setError("Ask some questions first to get your daily verse!");
-            return;
-          }
-          throw new Error("Failed to fetch verse");
-        }
-        const data = await res.json();
-        setVerse(data);
-      } catch {
-        setError("Failed to load your daily verse");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchVerse();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
         <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-20 sm:px-10 md:px-12">
@@ -78,7 +66,9 @@ export default function DailyPage() {
           >
             ← Back
           </Link>
-          <p className="font-sans text-sm text-saffron">{error}</p>
+          <p className="font-sans text-sm text-saffron">
+            {error instanceof Error ? error.message : "Failed to load your daily verse"}
+          </p>
         </div>
       </div>
     );

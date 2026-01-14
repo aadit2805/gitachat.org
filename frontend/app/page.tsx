@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 
 function renderMarkdown(text: string) {
   // Convert **bold** to <strong>
@@ -20,45 +21,39 @@ interface GitaResponse {
   summarized_commentary: string;
 }
 
+async function submitQuery(query: string): Promise<GitaResponse> {
+  const res = await fetch("/api", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
 export default function Home() {
   const [query, setQuery] = useState("");
-  const [response, setResponse] = useState<GitaResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: submitQuery,
+  });
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-
-    setLoading(true);
-    setError("");
-
-    try {
-      const res = await fetch("/api", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
-      });
-
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setResponse(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    mutation.mutate(query);
   };
 
   const reset = () => {
     setQuery("");
-    setResponse(null);
-    setError("");
+    mutation.reset();
   };
 
   if (!mounted) return null;
@@ -68,8 +63,8 @@ export default function Home() {
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 sm:px-10 md:px-12">
 
         {/* Main content */}
-        <main className={response ? "pt-10 sm:pt-14" : "pt-[22vh] sm:pt-[25vh]"}>
-          {!response ? (
+        <main className={mutation.data ? "pt-10 sm:pt-14" : "pt-[22vh] sm:pt-[25vh]"}>
+          {!mutation.data ? (
             <div>
               {/* Title block */}
               <header className="mb-16">
@@ -97,10 +92,10 @@ export default function Home() {
 
                 <button
                   type="submit"
-                  disabled={loading || !query.trim()}
+                  disabled={mutation.isPending || !query.trim()}
                   className="bg-saffron px-10 py-3.5 font-sans text-sm font-medium tracking-wider text-white transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
-                  {loading ? (
+                  {mutation.isPending ? (
                     <span className="animate-think">Seeking...</span>
                   ) : (
                     "Ask"
@@ -108,8 +103,10 @@ export default function Home() {
                 </button>
               </form>
 
-              {error && (
-                <p className="mt-8 font-sans text-sm text-saffron">{error}</p>
+              {mutation.error && (
+                <p className="mt-8 font-sans text-sm text-saffron">
+                  {mutation.error instanceof Error ? mutation.error.message : "Something went wrong"}
+                </p>
               )}
 
               {/* Suggested prompts */}
@@ -148,14 +145,14 @@ export default function Home() {
               {/* Chapter/Verse badge */}
               <div className="mb-8 inline-block bg-saffron-light px-4 py-2">
                 <span className="font-sans text-sm font-medium tracking-wide text-saffron">
-                  Chapter {response.chapter}, Verse {response.verse}
+                  Chapter {mutation.data.chapter}, Verse {mutation.data.verse}
                 </span>
               </div>
 
               {/* Verse */}
               <blockquote className="mb-12 border-l-2 border-saffron/60 pl-6">
                 <p className="text-xl leading-relaxed tracking-wide sm:text-2xl">
-                  {response.translation}
+                  {mutation.data.translation}
                 </p>
               </blockquote>
 
@@ -168,7 +165,7 @@ export default function Home() {
                   Commentary
                 </h2>
                 <p className="text-base leading-loose tracking-wide text-foreground/70 sm:text-lg">
-                  {renderMarkdown(response.summarized_commentary)}
+                  {renderMarkdown(mutation.data.summarized_commentary)}
                 </p>
               </div>
             </article>
