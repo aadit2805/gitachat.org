@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
-import Link from "next/link";
-import {
-  ClerkProvider,
-  SignInButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
-} from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
+import { Nav } from "./components/Nav";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -116,52 +110,7 @@ export default function RootLayout({
     >
       <html lang="en">
         <body className={`${cormorant.variable} ${dmSans.variable} font-serif`}>
-          <nav className="fixed left-6 top-6 z-50 flex items-center gap-4">
-            <Link
-              href="/read"
-              className="font-sans text-sm text-muted-foreground/60 transition-colors hover:text-foreground"
-            >
-              Read
-            </Link>
-            <SignedIn>
-              <Link
-                href="/daily"
-                className="font-sans text-sm text-muted-foreground/60 transition-colors hover:text-foreground"
-              >
-                Daily
-              </Link>
-              <Link
-                href="/saved"
-                className="font-sans text-sm text-muted-foreground/60 transition-colors hover:text-foreground"
-              >
-                Saved
-              </Link>
-              <Link
-                href="/history"
-                className="font-sans text-sm text-muted-foreground/60 transition-colors hover:text-foreground"
-              >
-                History
-              </Link>
-            </SignedIn>
-          </nav>
-          <header className="fixed right-6 top-6 z-50 flex items-center gap-4">
-            <SignedOut>
-              <SignInButton mode="modal">
-                <button className="font-sans text-sm text-muted-foreground/60 transition-colors hover:text-foreground">
-                  Sign in
-                </button>
-              </SignInButton>
-            </SignedOut>
-            <SignedIn>
-              <UserButton
-                appearance={{
-                  elements: {
-                    avatarBox: "w-8 h-8",
-                  },
-                }}
-              />
-            </SignedIn>
-          </header>
+          <Nav />
           <Providers>{children}</Providers>
         </body>
       </html>
