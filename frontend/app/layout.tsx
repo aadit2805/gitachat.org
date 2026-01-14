@@ -116,8 +116,14 @@ export default function RootLayout({
     >
       <html lang="en">
         <body className={`${cormorant.variable} ${dmSans.variable} font-serif`}>
-          <SignedIn>
-            <nav className="fixed left-6 top-6 z-50 flex items-center gap-4">
+          <nav className="fixed left-6 top-6 z-50 flex items-center gap-4">
+            <Link
+              href="/read"
+              className="font-sans text-sm text-muted-foreground/60 transition-colors hover:text-foreground"
+            >
+              Read
+            </Link>
+            <SignedIn>
               <Link
                 href="/daily"
                 className="font-sans text-sm text-muted-foreground/60 transition-colors hover:text-foreground"
@@ -125,13 +131,19 @@ export default function RootLayout({
                 Daily
               </Link>
               <Link
+                href="/saved"
+                className="font-sans text-sm text-muted-foreground/60 transition-colors hover:text-foreground"
+              >
+                Saved
+              </Link>
+              <Link
                 href="/history"
                 className="font-sans text-sm text-muted-foreground/60 transition-colors hover:text-foreground"
               >
                 History
               </Link>
-            </nav>
-          </SignedIn>
+            </SignedIn>
+          </nav>
           <header className="fixed right-6 top-6 z-50 flex items-center gap-4">
             <SignedOut>
               <SignInButton mode="modal">
