@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import type { QueryHistoryRecord } from "@/lib/supabase";
 import { renderMarkdown } from "@/lib/utils";
@@ -28,14 +28,33 @@ async function fetchHistory(): Promise<QueryHistoryRecord[]> {
   return res.json();
 }
 
+async function clearHistory(): Promise<void> {
+  const res = await fetch("/api/history", { method: "DELETE" });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to clear history");
+  }
+}
+
 export default function HistoryPage() {
   const [selectedItem, setSelectedItem] = useState<QueryHistoryRecord | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: history, isLoading, error } = useQuery({
     queryKey: ["history"],
     queryFn: fetchHistory,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 30 * 1000,
     retry: false,
+  });
+
+  const clearMutation = useMutation({
+    mutationFn: clearHistory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["history"] });
+      setShowConfirm(false);
+    },
   });
 
   if (isLoading) {
@@ -126,9 +145,48 @@ export default function HistoryPage() {
           ← Back
         </Link>
 
-        <h1 className="mb-12 text-4xl font-medium tracking-[0.04em] sm:text-5xl">
-          History
-        </h1>
+        <div className="mb-12 flex items-baseline justify-between">
+          <h1 className="text-4xl font-medium tracking-[0.04em] sm:text-5xl">
+            History
+          </h1>
+          {history && history.length > 0 && !showConfirm && (
+            <button
+              onClick={() => setShowConfirm(true)}
+              className="font-sans text-sm text-muted-foreground/40 transition-colors hover:text-saffron"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        {showConfirm && (
+          <div className="mb-8 border border-border/30 p-4">
+            <p className="mb-4 font-sans text-sm text-foreground/80">
+              Clear all history? This cannot be undone.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => clearMutation.mutate()}
+                disabled={clearMutation.isPending}
+                className="font-sans text-sm text-saffron transition-opacity hover:opacity-80 disabled:opacity-50"
+              >
+                {clearMutation.isPending ? "Clearing..." : "Yes, clear"}
+              </button>
+              <button
+                onClick={() => setShowConfirm(false)}
+                disabled={clearMutation.isPending}
+                className="font-sans text-sm text-muted-foreground/60 transition-colors hover:text-foreground"
+              >
+                Cancel
+              </button>
+            </div>
+            {clearMutation.error && (
+              <p className="mt-2 font-sans text-sm text-saffron">
+                {clearMutation.error instanceof Error ? clearMutation.error.message : "Failed to clear"}
+              </p>
+            )}
+          </div>
+        )}
 
         {!history || history.length === 0 ? (
           <p className="font-sans text-muted-foreground/60">
