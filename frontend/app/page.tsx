@@ -47,7 +47,7 @@ export default function Home() {
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 sm:px-10 md:px-12">
 
         {/* Main content */}
-        <main className={mutation.data ? "pt-10 sm:pt-14" : "pt-[22vh] sm:pt-[25vh]"}>
+        <main className={mutation.data ? "pt-24 sm:pt-20" : "pt-[22vh] sm:pt-[25vh]"}>
           {!mutation.data ? (
             <div>
               {/* Title block */}
@@ -118,12 +118,11 @@ export default function Home() {
             </div>
           ) : (
             <article className="animate-slow-rise">
-              {/* Back button as header */}
               <button
                 onClick={reset}
                 className="mb-12 block font-sans text-sm tracking-wide text-muted-foreground/60 transition-colors hover:text-foreground"
               >
-                ← Back
+                ← Ask another
               </button>
 
               {/* Chapter/Verse badge */}

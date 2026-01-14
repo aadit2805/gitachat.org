@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 
 interface VerseData {
@@ -63,13 +62,7 @@ export default async function VersePage({
   if (isNaN(ch) || isNaN(v) || ch < 1 || ch > 18 || v < 1) {
     return (
       <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
-        <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-20 sm:px-10 md:px-12">
-          <Link
-            href="/"
-            className="mb-12 block font-sans text-sm tracking-wide text-muted-foreground/60 transition-colors hover:text-foreground"
-          >
-            ← GitaChat
-          </Link>
+        <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-24 sm:px-10 sm:pt-20 md:px-12">
           <p className="font-sans text-muted-foreground/60">Verse not found.</p>
         </div>
       </div>
@@ -81,13 +74,7 @@ export default async function VersePage({
   if (!verse) {
     return (
       <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
-        <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-20 sm:px-10 md:px-12">
-          <Link
-            href="/"
-            className="mb-12 block font-sans text-sm tracking-wide text-muted-foreground/60 transition-colors hover:text-foreground"
-          >
-            ← GitaChat
-          </Link>
+        <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-24 sm:px-10 sm:pt-20 md:px-12">
           <p className="font-sans text-muted-foreground/60">Verse not found.</p>
         </div>
       </div>
@@ -96,15 +83,8 @@ export default async function VersePage({
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-10 sm:px-10 sm:pt-14 md:px-12">
+      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-24 sm:px-10 sm:pt-20 md:px-12">
         <article>
-          <Link
-            href="/"
-            className="mb-12 block font-sans text-sm tracking-wide text-muted-foreground/60 transition-colors hover:text-foreground"
-          >
-            ← GitaChat
-          </Link>
-
           <div className="mb-8 inline-block bg-saffron-light px-4 py-2">
             <span className="font-sans text-sm font-medium tracking-wide text-saffron">
               Chapter {verse.chapter}, Verse {verse.verse}

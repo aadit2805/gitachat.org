@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { renderMarkdown, type VerseData } from "@/lib/utils";
 import { VerseActions } from "@/components/VerseActions";
 
@@ -42,12 +41,6 @@ export default function DailyPage() {
     return (
       <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
         <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-20 sm:px-10 md:px-12">
-          <Link
-            href="/"
-            className="mb-12 block font-sans text-sm tracking-wide text-muted-foreground/60 transition-colors hover:text-foreground"
-          >
-            ← Back
-          </Link>
           <p className="font-sans text-sm text-saffron">
             {error instanceof Error ? error.message : "Failed to load your daily verse"}
           </p>
@@ -60,15 +53,8 @@ export default function DailyPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-10 sm:px-10 sm:pt-14 md:px-12">
+      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-24 sm:px-10 sm:pt-20 md:px-12">
         <article className="animate-slow-rise">
-          <Link
-            href="/"
-            className="mb-12 block font-sans text-sm tracking-wide text-muted-foreground/60 transition-colors hover:text-foreground"
-          >
-            ← Back
-          </Link>
-
           <h1 className="mb-8 text-4xl font-medium tracking-[0.04em] sm:text-5xl">
             Daily Verse
           </h1>
