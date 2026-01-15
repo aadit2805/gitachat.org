@@ -26,7 +26,7 @@ function getTodayDateString(timezone: string): string {
   }
 }
 
-function getTimezonesAt6AM(now: Date): string[] {
+function getTimezonesAt8AM(now: Date): string[] {
   const targetHour = 8;
   const commonTimezones = [
     "Pacific/Honolulu", "America/Anchorage", "America/Los_Angeles", "America/Denver",
@@ -138,7 +138,7 @@ export async function POST(req: Request) {
     }
 
     const now = new Date();
-    const targetTimezones = getTimezonesAt6AM(now);
+    const targetTimezones = getTimezonesAt8AM(now);
 
     if (targetTimezones.length === 0) {
       return NextResponse.json({ sent: 0, message: "No timezones at 6am" });

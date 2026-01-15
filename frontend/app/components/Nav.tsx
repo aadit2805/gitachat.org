@@ -96,6 +96,9 @@ export function Nav() {
                     <ListItem href="/history" title="History">
                       Your past queries
                     </ListItem>
+                    <ListItem href="/settings" title="Settings">
+                      Email preferences
+                    </ListItem>
                   </SignedIn>
                 </ul>
               </NavigationMenuContent>
