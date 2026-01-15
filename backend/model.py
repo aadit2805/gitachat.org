@@ -3,10 +3,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Limit CPU threads to prevent contention on shared infrastructure
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+
+import torch
+torch.set_num_threads(1)
+
 from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone
-
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Embedding model - bge-base-en-v1.5 (768-dim, top MTEB performance)
 embedding_model = SentenceTransformer("BAAI/bge-base-en-v1.5")
