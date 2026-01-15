@@ -18,3 +18,15 @@ export interface QueryHistoryRecord {
   summarized_commentary: string;
   created_at: string;
 }
+
+export interface EmailSubscriber {
+  id: string;
+  user_id: string;
+  email: string;
+  timezone: string;
+  unsubscribe_token: string;
+  is_active: boolean;
+  last_email_sent_at: string | null;
+  subscribed_at: string;
+  created_at: string;
+}
