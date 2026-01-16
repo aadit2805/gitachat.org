@@ -129,7 +129,7 @@ export default function ReadPage() {
             {searchResults.length > 0 ? (
               <>
                 <p className="font-sans text-xs tracking-wider text-muted-foreground/50">
-                  {searchResults.length} {searchResults.length === 1 ? "result" : "results"} for "{searchQuery}"
+                  {searchResults.length} {searchResults.length === 1 ? "result" : "results"} for &ldquo;{searchQuery}&rdquo;
                 </p>
                 {searchResults.map((verse) => (
                   <Link
@@ -151,7 +151,7 @@ export default function ReadPage() {
               </>
             ) : searchQuery.length >= 2 && !isLoading ? (
               <p className="font-sans text-sm text-muted-foreground/60">
-                No verses found matching "{searchQuery}"
+                No verses found matching &ldquo;{searchQuery}&rdquo;
               </p>
             ) : null}
           </div>
