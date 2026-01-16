@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { renderMarkdown, type VerseData } from "@/lib/utils";
 import { VerseActions } from "@/components/VerseActions";
 
@@ -45,10 +45,22 @@ async function fetchVerse(chapter: number, verse: number): Promise<VerseData> {
 
 export default function ChapterPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const chapterNum = parseInt(params.chapter as string);
+  const verseParam = searchParams.get("verse");
   const [currentVerse, setCurrentVerse] = useState(1);
 
   const chapter = CHAPTERS.find((c) => c.number === chapterNum);
+
+  // Set initial verse from URL param
+  useEffect(() => {
+    if (verseParam && chapter) {
+      const verseNum = parseInt(verseParam);
+      if (verseNum >= 1 && verseNum <= chapter.verses) {
+        setCurrentVerse(verseNum);
+      }
+    }
+  }, [verseParam, chapter]);
 
   const { data: verse, isLoading, error } = useQuery({
     queryKey: ["verse", chapterNum, currentVerse],

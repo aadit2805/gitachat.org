@@ -7,6 +7,8 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 import logging
+import json
+import os
 
 logging.basicConfig(level=logging.INFO)
 
@@ -14,9 +16,47 @@ limiter = Limiter(key_func=get_remote_address)
 
 MAX_QUERY_LENGTH = 500
 
+# Cache for all verses (loaded once on startup)
+all_verses_cache: list[dict] = []
+
+
+def load_all_verses() -> list[dict]:
+    """Load all verses from JSON files in backend/data/"""
+    verses = []
+    data_dir = os.path.join(os.path.dirname(__file__), "data")
+
+    for chapter_num in range(1, 19):  # Chapters 1-18
+        chapter_dir = os.path.join(data_dir, f"chapter_{chapter_num}")
+        if not os.path.exists(chapter_dir):
+            continue
+
+        verse_num = 1
+        while True:
+            verse_file = os.path.join(chapter_dir, f"verse_{verse_num}.json")
+            if not os.path.exists(verse_file):
+                break
+
+            with open(verse_file, "r", encoding="utf-8") as f:
+                verse_data = json.load(f)
+                verses.append({
+                    "chapter": verse_data["chapter"],
+                    "verse": verse_data["verse"],
+                    "translation": verse_data["translation"],
+                    "summary": verse_data.get("commentary", "")[:500]  # Truncate for search
+                })
+            verse_num += 1
+
+    return verses
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global all_verses_cache
+    # Load all verses on startup
+    logging.info("Loading all verses...")
+    all_verses_cache = load_all_verses()
+    logging.info(f"Loaded {len(all_verses_cache)} verses")
+
     # Load model on startup (before any requests)
     logging.info("Loading embedding model...")
     from model import embedding_model
@@ -93,3 +133,12 @@ async def get_specific_verse(request: Request, verse_req: VerseRequest) -> dict:
     except Exception as e:
         logging.error(f"Error fetching verse: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+@app.get("/api/all-verses")
+async def get_all_verses():
+    """
+    Get all verses for client-side search.
+    Returns chapter, verse, translation, and summary for all 703 verses.
+    """
+    return {"status": "success", "data": all_verses_cache}
