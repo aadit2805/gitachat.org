@@ -20,31 +20,37 @@ all_verses_cache: list[dict] = []
 
 def load_all_verses_from_pinecone() -> list[dict]:
     """Load all verses from Pinecone vector database"""
-    from model import index
+    try:
+        from model import index
 
-    verses = []
-    # Pinecone doesn't have a "fetch all" - we query with a dummy vector and high top_k
-    # Since we have ~700 verses, we fetch in batches by chapter
-    for chapter_num in range(1, 19):
-        results = index.query(
-            vector=[0] * 768,
-            top_k=100,  # Max verses per chapter is 78 (chapter 18)
-            include_metadata=True,
-            filter={"chapter": chapter_num}
-        )
+        verses = []
+        # Pinecone doesn't have a "fetch all" - we query with a dummy vector and high top_k
+        # Since we have ~700 verses, we fetch in batches by chapter
+        for chapter_num in range(1, 19):
+            logging.info(f"Fetching chapter {chapter_num} from Pinecone...")
+            results = index.query(
+                vector=[0] * 768,
+                top_k=100,  # Max verses per chapter is 78 (chapter 18)
+                include_metadata=True,
+                filter={"chapter": chapter_num}
+            )
+            logging.info(f"Chapter {chapter_num}: got {len(results['matches'])} verses")
 
-        for match in results["matches"]:
-            meta = match["metadata"]
-            verses.append({
-                "chapter": meta["chapter"],
-                "verse": meta["verse"],
-                "translation": meta["translation"],
-                "summary": meta.get("summary", "")[:500]
-            })
+            for match in results["matches"]:
+                meta = match["metadata"]
+                verses.append({
+                    "chapter": meta["chapter"],
+                    "verse": meta["verse"],
+                    "translation": meta["translation"],
+                    "summary": meta.get("summary", "")[:500]
+                })
 
-    # Sort by chapter and verse
-    verses.sort(key=lambda v: (v["chapter"], v["verse"]))
-    return verses
+        # Sort by chapter and verse
+        verses.sort(key=lambda v: (v["chapter"], v["verse"]))
+        return verses
+    except Exception as e:
+        logging.error(f"Failed to load verses from Pinecone: {e}")
+        return []
 
 
 @asynccontextmanager
