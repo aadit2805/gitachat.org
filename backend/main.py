@@ -7,8 +7,6 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 import logging
-import json
-import os
 
 logging.basicConfig(level=logging.INFO)
 
@@ -20,41 +18,41 @@ MAX_QUERY_LENGTH = 500
 all_verses_cache: list[dict] = []
 
 
-def load_all_verses() -> list[dict]:
-    """Load all verses from JSON files in backend/data/"""
+def load_all_verses_from_pinecone() -> list[dict]:
+    """Load all verses from Pinecone vector database"""
+    from model import index
+
     verses = []
-    data_dir = os.path.join(os.path.dirname(__file__), "data")
+    # Pinecone doesn't have a "fetch all" - we query with a dummy vector and high top_k
+    # Since we have ~700 verses, we fetch in batches by chapter
+    for chapter_num in range(1, 19):
+        results = index.query(
+            vector=[0] * 768,
+            top_k=100,  # Max verses per chapter is 78 (chapter 18)
+            include_metadata=True,
+            filter={"chapter": chapter_num}
+        )
 
-    for chapter_num in range(1, 19):  # Chapters 1-18
-        chapter_dir = os.path.join(data_dir, f"chapter_{chapter_num}")
-        if not os.path.exists(chapter_dir):
-            continue
+        for match in results["matches"]:
+            meta = match["metadata"]
+            verses.append({
+                "chapter": meta["chapter"],
+                "verse": meta["verse"],
+                "translation": meta["translation"],
+                "summary": meta.get("summary", "")[:500]
+            })
 
-        verse_num = 1
-        while True:
-            verse_file = os.path.join(chapter_dir, f"verse_{verse_num}.json")
-            if not os.path.exists(verse_file):
-                break
-
-            with open(verse_file, "r", encoding="utf-8") as f:
-                verse_data = json.load(f)
-                verses.append({
-                    "chapter": verse_data["chapter"],
-                    "verse": verse_data["verse"],
-                    "translation": verse_data["translation"],
-                    "summary": verse_data.get("commentary", "")[:500]  # Truncate for search
-                })
-            verse_num += 1
-
+    # Sort by chapter and verse
+    verses.sort(key=lambda v: (v["chapter"], v["verse"]))
     return verses
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global all_verses_cache
-    # Load all verses on startup
-    logging.info("Loading all verses...")
-    all_verses_cache = load_all_verses()
+    # Load all verses from Pinecone on startup
+    logging.info("Loading all verses from Pinecone...")
+    all_verses_cache = load_all_verses_from_pinecone()
     logging.info(f"Loaded {len(all_verses_cache)} verses")
 
     # Load model on startup (before any requests)
