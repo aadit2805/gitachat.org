@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Nav } from "./components/Nav";
@@ -49,16 +49,19 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#1a1410" },
-  ],
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
     ],
-    apple: '/apple-icon.svg',
+    apple: '/apple-touch-icon.png',
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#1a1410" },
+  ],
 };
 
 export default function RootLayout({
