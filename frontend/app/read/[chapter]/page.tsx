@@ -4,29 +4,10 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { renderMarkdown, type VerseData } from "@/lib/utils";
-import { VerseActions } from "@/components/VerseActions";
-
-const CHAPTERS = [
-  { number: 1, name: "Arjuna's Despair", verses: 47 },
-  { number: 2, name: "The Yoga of Knowledge", verses: 72 },
-  { number: 3, name: "The Yoga of Action", verses: 43 },
-  { number: 4, name: "The Yoga of Wisdom", verses: 42 },
-  { number: 5, name: "The Yoga of Renunciation", verses: 29 },
-  { number: 6, name: "The Yoga of Meditation", verses: 47 },
-  { number: 7, name: "Knowledge and Realization", verses: 30 },
-  { number: 8, name: "The Eternal Brahman", verses: 28 },
-  { number: 9, name: "The Royal Secret", verses: 34 },
-  { number: 10, name: "Divine Manifestations", verses: 42 },
-  { number: 11, name: "The Universal Form", verses: 55 },
-  { number: 12, name: "The Yoga of Devotion", verses: 20 },
-  { number: 13, name: "The Field and Knower", verses: 35 },
-  { number: 14, name: "The Three Gunas", verses: 27 },
-  { number: 15, name: "The Supreme Self", verses: 20 },
-  { number: 16, name: "Divine and Demonic Natures", verses: 24 },
-  { number: 17, name: "Three Kinds of Faith", verses: 28 },
-  { number: 18, name: "Liberation Through Renunciation", verses: 78 },
-];
+import type { VerseData } from "@/lib/types";
+import { getChapter } from "@/lib/chapters";
+import { STALE_TIME } from "@/lib/constants";
+import { VerseDisplay } from "@/components/VerseDisplay";
 
 async function fetchVerse(chapter: number, verse: number): Promise<VerseData> {
   const res = await fetch("/api/verse", {
@@ -50,7 +31,7 @@ export default function ChapterPage() {
   const verseParam = searchParams.get("verse");
   const [currentVerse, setCurrentVerse] = useState(1);
 
-  const chapter = CHAPTERS.find((c) => c.number === chapterNum);
+  const chapter = getChapter(chapterNum);
 
   // Set initial verse from URL param
   useEffect(() => {
@@ -66,7 +47,7 @@ export default function ChapterPage() {
     queryKey: ["verse", chapterNum, currentVerse],
     queryFn: () => fetchVerse(chapterNum, currentVerse),
     enabled: !!chapter,
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIME.VERSE,
   });
 
   if (!chapter || chapterNum < 1 || chapterNum > 18) {
@@ -112,39 +93,13 @@ export default function ChapterPage() {
         ) : error ? (
           <p className="font-sans text-sm text-saffron">Failed to load verse</p>
         ) : verse ? (
-          <article className="animate-slow-rise">
-            <div className="mb-8 inline-block bg-saffron-light px-4 py-2">
-              <span className="font-sans text-sm font-medium tracking-wide text-saffron">
-                Verse {currentVerse} of {chapter.verses}
-              </span>
-            </div>
-
-            <blockquote className="mb-12 border-l-2 border-saffron/60 pl-6">
-              <p className="text-xl leading-relaxed tracking-wide sm:text-2xl">
-                {verse.translation}
-              </p>
-            </blockquote>
-
-            <div className="mb-10 h-px w-16 bg-border/30" />
-
-            <div>
-              <h2 className="mb-4 font-sans text-xs font-medium uppercase tracking-widest text-saffron/80">
-                Commentary
-              </h2>
-              <p className="text-base leading-loose tracking-wide text-foreground/70 sm:text-lg">
-                {renderMarkdown(verse.summarized_commentary)}
-              </p>
-            </div>
-
-            <div className="mt-10">
-              <VerseActions
-                chapter={verse.chapter}
-                verse={verse.verse}
-                translation={verse.translation}
-                summarized_commentary={verse.summarized_commentary}
-              />
-            </div>
-          </article>
+          <VerseDisplay
+            chapter={verse.chapter}
+            verse={verse.verse}
+            translation={verse.translation}
+            summarizedCommentary={verse.summarized_commentary}
+            badgeLabel={`Verse ${currentVerse} of ${chapter.verses}`}
+          />
         ) : null}
 
         <div className="mt-12 flex items-center justify-between">

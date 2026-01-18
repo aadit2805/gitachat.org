@@ -3,11 +3,10 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
-import { type VerseData } from "@/lib/utils";
+import { type VerseData } from "@/lib/types";
+import { LAST_SEARCH_KEY, SUGGESTED_PROMPTS } from "@/lib/constants";
 import { VerseActions } from "@/components/VerseActions";
 import { ExpandableCommentary } from "@/components/ExpandableCommentary";
-
-const LAST_SEARCH_KEY = "gitachat_last_search";
 
 interface SavedSearch {
   query: string;
@@ -36,7 +35,6 @@ function HomeContent() {
   const mutation = useMutation({
     mutationFn: submitQuery,
     onSuccess: (result, variables) => {
-      // Save both query and result to localStorage
       const saved: SavedSearch = { query: variables, result };
       localStorage.setItem(LAST_SEARCH_KEY, JSON.stringify(saved));
     },
@@ -45,12 +43,10 @@ function HomeContent() {
   useEffect(() => {
     setMounted(true);
 
-    // Check for ?q= param - restore from localStorage instantly
     const queryParam = searchParams.get("q");
     if (queryParam) {
       setQuery(queryParam);
 
-      // Try to restore from localStorage for instant display
       try {
         const saved = localStorage.getItem(LAST_SEARCH_KEY);
         if (saved) {
@@ -60,11 +56,9 @@ function HomeContent() {
           }
         }
       } catch {
-        // If restore fails, fall back to re-fetching
         mutation.mutate(queryParam);
       }
 
-      // Clear the URL param
       router.replace("/", { scroll: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -73,7 +67,7 @@ function HomeContent() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-    setRestoredResult(null); // Clear restored result when doing new search
+    setRestoredResult(null);
     mutation.mutate(query);
   };
 
@@ -83,7 +77,6 @@ function HomeContent() {
     mutation.reset();
   };
 
-  // Use either mutation data or restored result
   const resultData = mutation.data || restoredResult;
 
   if (!mounted) return null;
@@ -145,12 +138,7 @@ function HomeContent() {
                   Try asking
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    "How do I find inner peace?",
-                    "What is my purpose in life?",
-                    "How to overcome fear?",
-                    "What is true happiness?",
-                  ].map((prompt) => (
+                  {SUGGESTED_PROMPTS.map((prompt) => (
                     <button
                       key={prompt}
                       onClick={() => setQuery(prompt)}

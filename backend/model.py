@@ -1,34 +1,20 @@
-import os
-from dotenv import load_dotenv
+"""
+Core model functionality for GitaChat.
+Handles verse matching and retrieval using Pinecone vector search.
+"""
 
-load_dotenv()
-
-# Limit CPU threads to prevent contention on shared infrastructure
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-
-import torch
-torch.set_num_threads(1)
-
-from sentence_transformers import SentenceTransformer
-from pinecone import Pinecone
-
-# Embedding model - bge-base-en-v1.5 (768-dim, top MTEB performance)
-embedding_model = SentenceTransformer("BAAI/bge-base-en-v1.5")
-
-pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-index = pc.Index(os.getenv("PINECONE_INDEX"))
+from config import EMBEDDING_DIMENSION
+from clients import embedding_model, index
 
 
 def get_verse(chapter: int, verse: int):
     """Fetch a specific verse by chapter and verse number."""
     # Query Pinecone for the specific verse using metadata filter
     results = index.query(
-        vector=[0] * 768,  # Dummy vector, we're filtering by metadata
+        vector=[0] * EMBEDDING_DIMENSION,  # Dummy vector, we're filtering by metadata
         top_k=1,
         include_metadata=True,
-        filter={"chapter": chapter, "verse": verse}
+        filter={"chapter": chapter, "verse": verse},
     )
 
     if not results["matches"]:
@@ -39,7 +25,7 @@ def get_verse(chapter: int, verse: int):
         "chapter": metadata["chapter"],
         "verse": metadata["verse"],
         "translation": metadata["translation"],
-        "summarized_commentary": metadata.get("summary", "")
+        "summarized_commentary": metadata.get("summary", ""),
     }
     # Include full commentary if available
     if "commentary" in metadata and metadata["commentary"]:
@@ -48,15 +34,16 @@ def get_verse(chapter: int, verse: int):
 
 
 def match(query, all_verses=None):
+    """Find the best matching verse for a query using semantic search."""
     # BGE models work best with instruction prefix for queries
-    query_with_instruction = f"Represent this sentence for searching relevant passages: {query}"
+    query_with_instruction = (
+        f"Represent this sentence for searching relevant passages: {query}"
+    )
     query_embedding = embedding_model.encode(query_with_instruction).tolist()
 
     # Fetch top 8 matches from Pinecone for hybrid search
     results = index.query(
-        vector=query_embedding,
-        top_k=8,
-        include_metadata=True
+        vector=query_embedding, top_k=8, include_metadata=True
     )
 
     if not results["matches"]:
@@ -66,16 +53,18 @@ def match(query, all_verses=None):
     semantic_matches = []
     for i, match in enumerate(results["matches"]):
         meta = match["metadata"]
-        semantic_matches.append({
-            "chapter": meta["chapter"],
-            "verse": meta["verse"],
-            "translation": meta["translation"],
-            "summary": meta.get("summary", ""),
-            "commentary": meta.get("commentary", ""),
-            "semantic_rank": i,
-            "semantic_score": match["score"],
-            "keyword_boost": 0
-        })
+        semantic_matches.append(
+            {
+                "chapter": meta["chapter"],
+                "verse": meta["verse"],
+                "translation": meta["translation"],
+                "summary": meta.get("summary", ""),
+                "commentary": meta.get("commentary", ""),
+                "semantic_rank": i,
+                "semantic_score": match["score"],
+                "keyword_boost": 0,
+            }
+        )
 
     # Keyword matching: boost results that contain query terms
     query_lower = query.lower()
@@ -103,7 +92,7 @@ def match(query, all_verses=None):
         "chapter": best["chapter"],
         "verse": best["verse"],
         "translation": best["translation"],
-        "summarized_commentary": best["summary"]
+        "summarized_commentary": best["summary"],
     }
     if best["commentary"]:
         main_result["full_commentary"] = best["commentary"]
@@ -114,30 +103,17 @@ def match(query, all_verses=None):
     for match in semantic_matches[1:]:
         key = (match["chapter"], match["verse"])
         if key not in seen:
-            related.append({
-                "chapter": match["chapter"],
-                "verse": match["verse"],
-                "translation": match["translation"],
-                "summarized_commentary": match["summary"]
-            })
+            related.append(
+                {
+                    "chapter": match["chapter"],
+                    "verse": match["verse"],
+                    "translation": match["translation"],
+                    "summarized_commentary": match["summary"],
+                }
+            )
             seen.add(key)
             if len(related) >= 3:
                 break
 
     main_result["related"] = related
     return main_result
-
-
-if __name__ == "__main__":
-    while True:
-        query = input("Enter your query (type 'exit' to quit): ")
-        if query.lower() == "exit":
-            print("Exiting the program. Goodbye!")
-            break
-        best_verse = match(query)
-        if best_verse:
-            print(f"\nBest matching verse:\nChapter {best_verse['chapter']}, Verse {best_verse['verse']}\n")
-            print(f"Translation: {best_verse['translation']}")
-            print(f"Summarized Commentary: {best_verse['summarized_commentary']}\n")
-        else:
-            print("No matching verse found.\n")

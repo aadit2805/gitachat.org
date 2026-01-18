@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { QueryHistoryRecord } from "@/lib/supabase";
-import { renderMarkdown } from "@/lib/utils";
-import { VerseActions } from "@/components/VerseActions";
+import { STALE_TIME } from "@/lib/constants";
+import { PageLoading } from "@/components/PageLoading";
+import { PageError } from "@/components/PageError";
+import { VerseDisplay } from "@/components/VerseDisplay";
 
 function formatDate(dateString: string) {
   const date = new Date(dateString);
@@ -45,7 +47,7 @@ export default function HistoryPage() {
   const { data: history, isLoading, error } = useQuery({
     queryKey: ["history"],
     queryFn: fetchHistory,
-    staleTime: 30 * 1000,
+    staleTime: STALE_TIME.HISTORY,
     retry: false,
   });
 
@@ -58,81 +60,38 @@ export default function HistoryPage() {
   });
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
-        <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-20 sm:px-10 md:px-12">
-          <p className="animate-think font-sans text-muted-foreground/60">
-            Loading...
-          </p>
-        </div>
-      </div>
-    );
+    return <PageLoading />;
   }
 
   if (error) {
-    return (
-      <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
-        <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-20 sm:px-10 md:px-12">
-          <p className="font-sans text-sm text-saffron">
-            {error instanceof Error ? error.message : "Failed to load history"}
-          </p>
-        </div>
-      </div>
-    );
+    return <PageError error={error} fallbackMessage="Failed to load history" />;
   }
 
   if (selectedItem) {
     return (
       <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
         <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-16 sm:px-10 sm:pt-16 md:px-12">
-          <article className="animate-slow-rise">
-            <button
-              onClick={() => setSelectedItem(null)}
-              className="mb-12 block font-sans text-sm tracking-wide text-muted-foreground/60 transition-colors hover:text-foreground"
-            >
-              ← Back to history
-            </button>
+          <button
+            onClick={() => setSelectedItem(null)}
+            className="mb-12 block font-sans text-sm tracking-wide text-muted-foreground/60 transition-colors hover:text-foreground"
+          >
+            ← Back to history
+          </button>
 
-            <p className="mb-6 font-sans text-xs tracking-wider text-muted-foreground/40">
-              {formatDate(selectedItem.created_at)}
-            </p>
+          <p className="mb-6 font-sans text-xs tracking-wider text-muted-foreground/40">
+            {formatDate(selectedItem.created_at)}
+          </p>
 
-            <h2 className="mb-8 text-xl tracking-wide text-foreground/80 sm:text-2xl">
-              &ldquo;{selectedItem.query}&rdquo;
-            </h2>
+          <h2 className="mb-8 text-xl tracking-wide text-foreground/80 sm:text-2xl">
+            &ldquo;{selectedItem.query}&rdquo;
+          </h2>
 
-            <div className="mb-8 inline-block bg-saffron-light px-4 py-2">
-              <span className="font-sans text-sm font-medium tracking-wide text-saffron">
-                Chapter {selectedItem.chapter}, Verse {selectedItem.verse}
-              </span>
-            </div>
-
-            <blockquote className="mb-12 border-l-2 border-saffron/60 pl-6">
-              <p className="text-xl leading-relaxed tracking-wide sm:text-2xl">
-                {selectedItem.translation}
-              </p>
-            </blockquote>
-
-            <div className="mb-10 h-px w-16 bg-border/30" />
-
-            <div>
-              <h2 className="mb-4 font-sans text-xs font-medium uppercase tracking-widest text-saffron/80">
-                Commentary
-              </h2>
-              <p className="text-base leading-loose tracking-wide text-foreground/70 sm:text-lg">
-                {renderMarkdown(selectedItem.summarized_commentary)}
-              </p>
-            </div>
-
-            <div className="mt-10">
-              <VerseActions
-                chapter={selectedItem.chapter}
-                verse={selectedItem.verse}
-                translation={selectedItem.translation}
-                summarized_commentary={selectedItem.summarized_commentary}
-              />
-            </div>
-          </article>
+          <VerseDisplay
+            chapter={selectedItem.chapter}
+            verse={selectedItem.verse}
+            translation={selectedItem.translation}
+            summarizedCommentary={selectedItem.summarized_commentary}
+          />
         </div>
       </div>
     );

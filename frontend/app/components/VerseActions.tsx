@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
+import type { BookmarkCheck, GeneratedImage } from "@/lib/types";
+import { STALE_TIME } from "@/lib/constants";
 import { LotusIcon } from "./LotusIcon";
 import { ImageModal } from "./ImageModal";
 import { VerseNote } from "./VerseNote";
@@ -15,18 +17,7 @@ interface VerseActionsProps {
   summarized_commentary: string;
 }
 
-interface Bookmark {
-  chapter: number;
-  verse: number;
-}
-
-interface GeneratedImage {
-  imageUrl: string;
-  shareUrl: string;
-  cached: boolean;
-}
-
-async function fetchBookmarks(): Promise<Bookmark[]> {
+async function fetchBookmarks(): Promise<BookmarkCheck[]> {
   const res = await fetch("/api/bookmarks");
   if (!res.ok) return [];
   return res.json();
@@ -54,7 +45,7 @@ export function VerseActions({ chapter, verse, translation, summarized_commentar
     queryKey: ["bookmarks"],
     queryFn: fetchBookmarks,
     enabled: isSignedIn,
-    staleTime: 30 * 1000,
+    staleTime: STALE_TIME.BOOKMARKS,
   });
 
   const isBookmarked = bookmarks?.some((b) => b.chapter === chapter && b.verse === verse);
@@ -106,10 +97,8 @@ export function VerseActions({ chapter, verse, translation, summarized_commentar
 
   const handleVisualize = () => {
     if (generatedImage) {
-      // If we already have an image, just show it
       setShowImageModal(true);
     } else {
-      // Generate a new image
       imageGeneration.mutate();
     }
   };

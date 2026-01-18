@@ -1,30 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getAdjacentVerses, isValidVerse } from "@/lib/chapters";
 import { VerseActions } from "@/components/VerseActions";
 import { ExpandableCommentary } from "@/components/ExpandableCommentary";
 import { BackToSearch } from "@/components/BackToSearch";
-
-// Verse counts per chapter in the Bhagavad Gita
-const VERSES_PER_CHAPTER: Record<number, number> = {
-  1: 47, 2: 72, 3: 43, 4: 42, 5: 29, 6: 47, 7: 30, 8: 28, 9: 34,
-  10: 42, 11: 55, 12: 20, 13: 35, 14: 27, 15: 20, 16: 24, 17: 28, 18: 78,
-};
-
-function getAdjacentVerses(chapter: number, verse: number) {
-  const prev = verse > 1
-    ? { chapter, verse: verse - 1 }
-    : chapter > 1
-      ? { chapter: chapter - 1, verse: VERSES_PER_CHAPTER[chapter - 1] }
-      : null;
-
-  const next = verse < VERSES_PER_CHAPTER[chapter]
-    ? { chapter, verse: verse + 1 }
-    : chapter < 18
-      ? { chapter: chapter + 1, verse: 1 }
-      : null;
-
-  return { prev, next };
-}
 
 interface VerseData {
   chapter: number;
@@ -41,7 +20,7 @@ async function getVerse(chapter: number, verse: number): Promise<VerseData | nul
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chapter, verse }),
-      next: { revalidate: 86400 }, // Cache for 24 hours
+      next: { revalidate: 86400 },
     });
 
     if (!res.ok) return null;
@@ -86,7 +65,7 @@ export default async function VersePage({
   const ch = parseInt(chapter);
   const v = parseInt(verseNum);
 
-  if (isNaN(ch) || isNaN(v) || ch < 1 || ch > 18 || v < 1) {
+  if (!isValidVerse(ch, v)) {
     return (
       <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
         <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-24 sm:px-10 sm:pt-20 md:px-12">
@@ -107,6 +86,8 @@ export default async function VersePage({
       </div>
     );
   }
+
+  const { prev, next } = getAdjacentVerses(ch, v);
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
@@ -147,43 +128,38 @@ export default async function VersePage({
           </div>
 
           {/* Previous/Next Navigation */}
-          {(() => {
-            const { prev, next } = getAdjacentVerses(ch, v);
-            return (
-              <nav className="mt-12 flex items-center justify-between border-t border-border/20 pt-8">
-                {prev ? (
-                  <Link
-                    href={`/verse/${prev.chapter}/${prev.verse}`}
-                    className="group flex flex-col"
-                  >
-                    <span className="font-sans text-xs tracking-wide text-muted-foreground/40 group-hover:text-muted-foreground/60">
-                      Previous
-                    </span>
-                    <span className="font-sans text-sm tracking-wide text-foreground/60 transition-colors group-hover:text-saffron">
-                      ← {prev.chapter}:{prev.verse}
-                    </span>
-                  </Link>
-                ) : (
-                  <div />
-                )}
-                {next ? (
-                  <Link
-                    href={`/verse/${next.chapter}/${next.verse}`}
-                    className="group flex flex-col items-end"
-                  >
-                    <span className="font-sans text-xs tracking-wide text-muted-foreground/40 group-hover:text-muted-foreground/60">
-                      Next
-                    </span>
-                    <span className="font-sans text-sm tracking-wide text-foreground/60 transition-colors group-hover:text-saffron">
-                      {next.chapter}:{next.verse} →
-                    </span>
-                  </Link>
-                ) : (
-                  <div />
-                )}
-              </nav>
-            );
-          })()}
+          <nav className="mt-12 flex items-center justify-between border-t border-border/20 pt-8">
+            {prev ? (
+              <Link
+                href={`/verse/${prev.chapter}/${prev.verse}`}
+                className="group flex flex-col"
+              >
+                <span className="font-sans text-xs tracking-wide text-muted-foreground/40 group-hover:text-muted-foreground/60">
+                  Previous
+                </span>
+                <span className="font-sans text-sm tracking-wide text-foreground/60 transition-colors group-hover:text-saffron">
+                  ← {prev.chapter}:{prev.verse}
+                </span>
+              </Link>
+            ) : (
+              <div />
+            )}
+            {next ? (
+              <Link
+                href={`/verse/${next.chapter}/${next.verse}`}
+                className="group flex flex-col items-end"
+              >
+                <span className="font-sans text-xs tracking-wide text-muted-foreground/40 group-hover:text-muted-foreground/60">
+                  Next
+                </span>
+                <span className="font-sans text-sm tracking-wide text-foreground/60 transition-colors group-hover:text-saffron">
+                  {next.chapter}:{next.verse} →
+                </span>
+              </Link>
+            ) : (
+              <div />
+            )}
+          </nav>
         </article>
 
         <footer className="mt-auto pb-8 pt-20">

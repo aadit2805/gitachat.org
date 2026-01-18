@@ -8,6 +8,9 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 import logging
 
+from config import EMBEDDING_DIMENSION
+from clients import index
+
 logging.basicConfig(level=logging.INFO)
 
 limiter = Limiter(key_func=get_remote_address)
@@ -21,29 +24,29 @@ all_verses_cache: list[dict] = []
 def load_all_verses_from_pinecone() -> list[dict]:
     """Load all verses from Pinecone vector database"""
     try:
-        from model import index
-
         verses = []
         # Pinecone doesn't have a "fetch all" - we query with a dummy vector and high top_k
         # Since we have ~700 verses, we fetch in batches by chapter
         for chapter_num in range(1, 19):
             logging.info(f"Fetching chapter {chapter_num} from Pinecone...")
             results = index.query(
-                vector=[0] * 768,
+                vector=[0] * EMBEDDING_DIMENSION,
                 top_k=100,  # Max verses per chapter is 78 (chapter 18)
                 include_metadata=True,
-                filter={"chapter": chapter_num}
+                filter={"chapter": chapter_num},
             )
             logging.info(f"Chapter {chapter_num}: got {len(results['matches'])} verses")
 
             for match in results["matches"]:
                 meta = match["metadata"]
-                verses.append({
-                    "chapter": meta["chapter"],
-                    "verse": meta["verse"],
-                    "translation": meta["translation"],
-                    "summary": meta.get("summary", "")[:500]
-                })
+                verses.append(
+                    {
+                        "chapter": meta["chapter"],
+                        "verse": meta["verse"],
+                        "translation": meta["translation"],
+                        "summary": meta.get("summary", "")[:500],
+                    }
+                )
 
         # Sort by chapter and verse
         verses.sort(key=lambda v: (v["chapter"], v["verse"]))
@@ -63,7 +66,8 @@ async def lifespan(app: FastAPI):
 
     # Load model on startup (before any requests)
     logging.info("Loading embedding model...")
-    from model import embedding_model
+    from clients import embedding_model
+
     # Warm up the model with a dummy query
     embedding_model.encode("warmup")
     logging.info("Model loaded and ready!")
@@ -86,6 +90,7 @@ app.add_middleware(
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     from fastapi.responses import JSONResponse
+
     return JSONResponse(status_code=429, content={"error": "Too many requests"})
 
 
@@ -111,6 +116,7 @@ async def query_gita(request: Request, query: Query) -> dict:
     """
     try:
         from model import match
+
         result = match(query.query)
         if not result:
             raise HTTPException(status_code=404, detail="No matches found")
@@ -128,6 +134,7 @@ async def get_specific_verse(request: Request, verse_req: VerseRequest) -> dict:
     """
     try:
         from model import get_verse
+
         result = get_verse(verse_req.chapter, verse_req.verse)
         if not result:
             raise HTTPException(status_code=404, detail="Verse not found")

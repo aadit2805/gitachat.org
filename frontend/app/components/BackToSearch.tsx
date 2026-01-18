@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-
-const LAST_SEARCH_KEY = "gitachat_last_search";
+import { LAST_SEARCH_KEY } from "@/lib/constants";
 
 interface BackToSearchProps {
   chapter: number;

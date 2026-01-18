@@ -1,24 +1,11 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+// Re-export types for backward compatibility
+export type { RelatedVerse, VerseData } from "./types";
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-
-export interface RelatedVerse {
-  chapter: number;
-  verse: number;
-  translation: string;
-  summarized_commentary: string;
-}
-
-export interface VerseData {
-  chapter: number;
-  verse: number;
-  translation: string;
-  summarized_commentary: string;
-  full_commentary?: string;
-  related?: RelatedVerse[];
 }
 
 export function renderMarkdown(text: string) {
