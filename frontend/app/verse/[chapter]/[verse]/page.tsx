@@ -1,11 +1,36 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { VerseActions } from "@/components/VerseActions";
+import { ExpandableCommentary } from "@/components/ExpandableCommentary";
+
+// Verse counts per chapter in the Bhagavad Gita
+const VERSES_PER_CHAPTER: Record<number, number> = {
+  1: 47, 2: 72, 3: 43, 4: 42, 5: 29, 6: 47, 7: 30, 8: 28, 9: 34,
+  10: 42, 11: 55, 12: 20, 13: 35, 14: 27, 15: 20, 16: 24, 17: 28, 18: 78,
+};
+
+function getAdjacentVerses(chapter: number, verse: number) {
+  const prev = verse > 1
+    ? { chapter, verse: verse - 1 }
+    : chapter > 1
+      ? { chapter: chapter - 1, verse: VERSES_PER_CHAPTER[chapter - 1] }
+      : null;
+
+  const next = verse < VERSES_PER_CHAPTER[chapter]
+    ? { chapter, verse: verse + 1 }
+    : chapter < 18
+      ? { chapter: chapter + 1, verse: 1 }
+      : null;
+
+  return { prev, next };
+}
 
 interface VerseData {
   chapter: number;
   verse: number;
   translation: string;
   summarized_commentary: string;
+  full_commentary?: string;
 }
 
 async function getVerse(chapter: number, verse: number): Promise<VerseData | null> {
@@ -104,9 +129,10 @@ export default async function VersePage({
             <h2 className="mb-4 font-sans text-xs font-medium uppercase tracking-widest text-saffron/80">
               Commentary
             </h2>
-            <p className="text-base leading-loose tracking-wide text-foreground/70 sm:text-lg">
-              {verse.summarized_commentary}
-            </p>
+            <ExpandableCommentary
+              summary={verse.summarized_commentary}
+              full={verse.full_commentary}
+            />
           </div>
 
           <div className="mt-10">
@@ -117,6 +143,45 @@ export default async function VersePage({
               summarized_commentary={verse.summarized_commentary}
             />
           </div>
+
+          {/* Previous/Next Navigation */}
+          {(() => {
+            const { prev, next } = getAdjacentVerses(ch, v);
+            return (
+              <nav className="mt-12 flex items-center justify-between border-t border-border/20 pt-8">
+                {prev ? (
+                  <Link
+                    href={`/verse/${prev.chapter}/${prev.verse}`}
+                    className="group flex flex-col"
+                  >
+                    <span className="font-sans text-xs tracking-wide text-muted-foreground/40 group-hover:text-muted-foreground/60">
+                      Previous
+                    </span>
+                    <span className="font-sans text-sm tracking-wide text-foreground/60 transition-colors group-hover:text-saffron">
+                      ← {prev.chapter}:{prev.verse}
+                    </span>
+                  </Link>
+                ) : (
+                  <div />
+                )}
+                {next ? (
+                  <Link
+                    href={`/verse/${next.chapter}/${next.verse}`}
+                    className="group flex flex-col items-end"
+                  >
+                    <span className="font-sans text-xs tracking-wide text-muted-foreground/40 group-hover:text-muted-foreground/60">
+                      Next
+                    </span>
+                    <span className="font-sans text-sm tracking-wide text-foreground/60 transition-colors group-hover:text-saffron">
+                      {next.chapter}:{next.verse} →
+                    </span>
+                  </Link>
+                ) : (
+                  <div />
+                )}
+              </nav>
+            );
+          })()}
         </article>
 
         <footer className="mt-auto pb-8 pt-20">

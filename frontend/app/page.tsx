@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { renderMarkdown, type VerseData } from "@/lib/utils";
 import { VerseActions } from "@/components/VerseActions";
+import { ExpandableCommentary } from "@/components/ExpandableCommentary";
 
 async function submitQuery(query: string): Promise<VerseData> {
   const res = await fetch("/api", {
@@ -147,9 +148,10 @@ export default function Home() {
                 <h2 className="mb-4 font-sans text-xs font-medium uppercase tracking-widest text-saffron/80">
                   Commentary
                 </h2>
-                <p className="text-base leading-loose tracking-wide text-foreground/70 sm:text-lg">
-                  {renderMarkdown(mutation.data.summarized_commentary)}
-                </p>
+                <ExpandableCommentary
+                  summary={mutation.data.summarized_commentary}
+                  full={mutation.data.full_commentary}
+                />
               </div>
 
               <div className="mt-10">
@@ -160,6 +162,32 @@ export default function Home() {
                   summarized_commentary={mutation.data.summarized_commentary}
                 />
               </div>
+
+              {/* Related Verses */}
+              {mutation.data.related && mutation.data.related.length > 0 && (
+                <div className="mt-16">
+                  <div className="mb-6 h-px w-16 bg-border/30" />
+                  <h2 className="mb-6 font-sans text-xs font-medium uppercase tracking-widest text-muted-foreground/50">
+                    Related Verses
+                  </h2>
+                  <div className="space-y-4">
+                    {mutation.data.related.map((verse) => (
+                      <a
+                        key={`${verse.chapter}-${verse.verse}`}
+                        href={`/verse/${verse.chapter}/${verse.verse}`}
+                        className="block border border-border/20 p-4 transition-colors hover:border-saffron/30 hover:bg-saffron/5"
+                      >
+                        <span className="mb-2 inline-block font-sans text-xs font-medium tracking-wide text-saffron/70">
+                          {verse.chapter}:{verse.verse}
+                        </span>
+                        <p className="line-clamp-2 text-sm leading-relaxed tracking-wide text-foreground/60">
+                          {verse.translation}
+                        </p>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </article>
           )}
         </main>
