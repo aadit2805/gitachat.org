@@ -51,8 +51,18 @@ export async function generateImage(prompt: string): Promise<string> {
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Replicate API error: ${error}`);
+    // Log full error server-side for debugging
+    const errorText = await response.text();
+    console.error("Replicate API error:", errorText);
+
+    // Return user-friendly messages
+    if (response.status === 429) {
+      throw new Error("Image generation is busy. Please try again in a moment.");
+    }
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("Image generation is temporarily unavailable.");
+    }
+    throw new Error("Failed to generate image. Please try again.");
   }
 
   const result = await response.json();
