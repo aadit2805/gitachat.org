@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { VerseActions } from "@/components/VerseActions";
 import { ExpandableCommentary } from "@/components/ExpandableCommentary";
+import { BackToSearch } from "@/components/BackToSearch";
 
 // Verse counts per chapter in the Bhagavad Gita
 const VERSES_PER_CHAPTER: Record<number, number> = {
@@ -110,6 +111,7 @@ export default async function VersePage({
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-24 sm:px-10 sm:pt-20 md:px-12">
+        <BackToSearch />
         <article>
           <div className="mb-8 inline-block bg-saffron-light px-4 py-2">
             <span className="font-sans text-sm font-medium tracking-wide text-saffron">

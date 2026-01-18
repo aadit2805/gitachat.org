@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { type VerseData } from "@/lib/utils";
 import { VerseActions } from "@/components/VerseActions";
 import { ExpandableCommentary } from "@/components/ExpandableCommentary";
+
+const LAST_SEARCH_KEY = "gitachat_last_search";
+
+interface SavedSearch {
+  query: string;
+  result: VerseData;
+}
 
 async function submitQuery(query: string): Promise<VerseData> {
   const res = await fetch("/api", {
@@ -18,28 +26,65 @@ async function submitQuery(query: string): Promise<VerseData> {
   return data;
 }
 
-export default function Home() {
+function HomeContent() {
   const [query, setQuery] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [restoredResult, setRestoredResult] = useState<VerseData | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const mutation = useMutation({
     mutationFn: submitQuery,
+    onSuccess: (result, variables) => {
+      // Save both query and result to localStorage
+      const saved: SavedSearch = { query: variables, result };
+      localStorage.setItem(LAST_SEARCH_KEY, JSON.stringify(saved));
+    },
   });
 
   useEffect(() => {
     setMounted(true);
+
+    // Check for ?q= param - restore from localStorage instantly
+    const queryParam = searchParams.get("q");
+    if (queryParam) {
+      setQuery(queryParam);
+
+      // Try to restore from localStorage for instant display
+      try {
+        const saved = localStorage.getItem(LAST_SEARCH_KEY);
+        if (saved) {
+          const parsed: SavedSearch = JSON.parse(saved);
+          if (parsed.query === queryParam && parsed.result) {
+            setRestoredResult(parsed.result);
+          }
+        }
+      } catch {
+        // If restore fails, fall back to re-fetching
+        mutation.mutate(queryParam);
+      }
+
+      // Clear the URL param
+      router.replace("/", { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
+    setRestoredResult(null); // Clear restored result when doing new search
     mutation.mutate(query);
   };
 
   const reset = () => {
     setQuery("");
+    setRestoredResult(null);
     mutation.reset();
   };
+
+  // Use either mutation data or restored result
+  const resultData = mutation.data || restoredResult;
 
   if (!mounted) return null;
 
@@ -48,8 +93,8 @@ export default function Home() {
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 sm:px-10 md:px-12">
 
         {/* Main content */}
-        <main className={mutation.data ? "pt-24 sm:pt-20" : "pt-[22vh] sm:pt-[25vh]"}>
-          {!mutation.data ? (
+        <main className={resultData ? "pt-24 sm:pt-20" : "pt-[22vh] sm:pt-[25vh]"}>
+          {!resultData ? (
             <div>
               {/* Title block */}
               <header className="mb-16">
@@ -129,14 +174,14 @@ export default function Home() {
               {/* Chapter/Verse badge */}
               <div className="mb-8 inline-block bg-saffron-light px-4 py-2">
                 <span className="font-sans text-sm font-medium tracking-wide text-saffron">
-                  Chapter {mutation.data.chapter}, Verse {mutation.data.verse}
+                  Chapter {resultData.chapter}, Verse {resultData.verse}
                 </span>
               </div>
 
               {/* Verse */}
               <blockquote className="mb-12 border-l-2 border-saffron/60 pl-6">
                 <p className="text-xl leading-relaxed tracking-wide sm:text-2xl">
-                  {mutation.data.translation}
+                  {resultData.translation}
                 </p>
               </blockquote>
 
@@ -149,29 +194,29 @@ export default function Home() {
                   Commentary
                 </h2>
                 <ExpandableCommentary
-                  summary={mutation.data.summarized_commentary}
-                  full={mutation.data.full_commentary}
+                  summary={resultData.summarized_commentary}
+                  full={resultData.full_commentary}
                 />
               </div>
 
               <div className="mt-10">
                 <VerseActions
-                  chapter={mutation.data.chapter}
-                  verse={mutation.data.verse}
-                  translation={mutation.data.translation}
-                  summarized_commentary={mutation.data.summarized_commentary}
+                  chapter={resultData.chapter}
+                  verse={resultData.verse}
+                  translation={resultData.translation}
+                  summarized_commentary={resultData.summarized_commentary}
                 />
               </div>
 
               {/* Related Verses */}
-              {mutation.data.related && mutation.data.related.length > 0 && (
+              {resultData.related && resultData.related.length > 0 && (
                 <div className="mt-16">
                   <div className="mb-6 h-px w-16 bg-border/30" />
                   <h2 className="mb-6 font-sans text-xs font-medium uppercase tracking-widest text-muted-foreground/50">
                     Related Verses
                   </h2>
                   <div className="space-y-4">
-                    {mutation.data.related.map((verse) => (
+                    {resultData.related.map((verse) => (
                       <a
                         key={`${verse.chapter}-${verse.verse}`}
                         href={`/verse/${verse.chapter}/${verse.verse}`}
@@ -201,5 +246,23 @@ export default function Home() {
         </footer>
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
+        <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-[22vh] sm:px-10 sm:pt-[25vh] md:px-12">
+          <header className="mb-16">
+            <h1 className="text-6xl font-medium tracking-[0.04em] sm:text-7xl md:text-8xl">
+              GitaChat
+            </h1>
+          </header>
+        </div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
