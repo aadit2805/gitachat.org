@@ -37,7 +37,7 @@ def process_verse(verse, embedding):
             "chapter": verse['chapter'],
             "verse": verse['verse'],
             "translation": verse['translation'],
-            "commentary": verse['commentary'][:1000],
+            "commentary": verse['commentary'],
             "summary": summary
         }
     }

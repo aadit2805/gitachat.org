@@ -32,8 +32,8 @@ def migrate():
             "metadata": {
                 "chapter": verse['chapter'],
                 "verse": verse['verse'],
-                "translation": verse['translation'][:1000],  # Pinecone metadata limit
-                "commentary": verse['commentary'][:1000]
+                "translation": verse['translation'],
+                "commentary": verse['commentary']
             }
         })
 
