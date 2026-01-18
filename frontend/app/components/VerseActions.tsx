@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import { LotusIcon } from "./LotusIcon";
 import { ImageModal } from "./ImageModal";
+import { VerseNote } from "./VerseNote";
 import { Sparkles } from "lucide-react";
 
 interface VerseActionsProps {
@@ -147,6 +148,7 @@ export function VerseActions({ chapter, verse, translation, summarized_commentar
                 "Visualize"
               )}
             </button>
+            <VerseNote chapter={chapter} verse={verse} />
           </>
         )}
         <button
