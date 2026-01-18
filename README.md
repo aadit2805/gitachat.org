@@ -16,7 +16,7 @@ GitaChat uses semantic search to find the most relevant verse from the Bhagavad 
 
 **Backend**
 - Python + FastAPI
-- Sentence Transformers (BGE embeddings)
+- Sentence Transformers (BGE-base-en-v1.5, 768-dim)
 - Pinecone (vector DB)
 - Hosted on Railway
 
@@ -50,7 +50,7 @@ BACKEND_URL=http://localhost:8000
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
 **Backend** (`backend/.env`)
