@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { renderMarkdown, type VerseData } from "@/lib/utils";
+import { type VerseData } from "@/lib/utils";
 import { VerseActions } from "@/components/VerseActions";
 import { ExpandableCommentary } from "@/components/ExpandableCommentary";
 
