@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { VerseActions } from "@/components/VerseActions";
 
 interface VerseData {
   chapter: number;
@@ -106,6 +107,15 @@ export default async function VersePage({
             <p className="text-base leading-loose tracking-wide text-foreground/70 sm:text-lg">
               {verse.summarized_commentary}
             </p>
+          </div>
+
+          <div className="mt-10">
+            <VerseActions
+              chapter={verse.chapter}
+              verse={verse.verse}
+              translation={verse.translation}
+              summarized_commentary={verse.summarized_commentary}
+            />
           </div>
         </article>
 

@@ -30,3 +30,14 @@ export interface EmailSubscriber {
   subscribed_at: string;
   created_at: string;
 }
+
+export interface VerseImage {
+  id: string;
+  chapter: number;
+  verse: number;
+  image_url: string;
+  storage_path: string;
+  prompt_hash: string;
+  user_id: string | null;
+  created_at: string;
+}

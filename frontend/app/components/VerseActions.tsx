@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import { LotusIcon } from "./LotusIcon";
+import { ImageModal } from "./ImageModal";
+import { Sparkles } from "lucide-react";
 
 interface VerseActionsProps {
   chapter: number;
@@ -17,16 +19,35 @@ interface Bookmark {
   verse: number;
 }
 
+interface GeneratedImage {
+  imageUrl: string;
+  shareUrl: string;
+  cached: boolean;
+}
+
 async function fetchBookmarks(): Promise<Bookmark[]> {
   const res = await fetch("/api/bookmarks");
   if (!res.ok) return [];
   return res.json();
 }
 
+async function generateVerseImage(data: { chapter: number; verse: number; translation: string }): Promise<GeneratedImage> {
+  const res = await fetch("/api/generate-image", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error || "Failed to generate image");
+  return result;
+}
+
 export function VerseActions({ chapter, verse, translation, summarized_commentary }: VerseActionsProps) {
   const { isSignedIn } = useAuth();
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState<GeneratedImage | null>(null);
 
   const { data: bookmarks } = useQuery({
     queryKey: ["bookmarks"],
@@ -74,30 +95,84 @@ export function VerseActions({ chapter, verse, translation, summarized_commentar
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const imageGeneration = useMutation({
+    mutationFn: () => generateVerseImage({ chapter, verse, translation }),
+    onSuccess: (data) => {
+      setGeneratedImage(data);
+      setShowImageModal(true);
+    },
+  });
+
+  const handleVisualize = () => {
+    if (generatedImage) {
+      // If we already have an image, just show it
+      setShowImageModal(true);
+    } else {
+      // Generate a new image
+      imageGeneration.mutate();
+    }
+  };
+
   const isPending = addBookmark.isPending || removeBookmark.isPending;
 
   return (
-    <div className="flex items-center gap-4">
-      {isSignedIn && (
+    <>
+      <div className="flex items-center gap-4">
+        {isSignedIn && (
+          <>
+            <button
+              onClick={handleBookmark}
+              disabled={isPending}
+              className={`transition-colors disabled:opacity-50 ${
+                isBookmarked
+                  ? "text-saffron hover:text-saffron/70"
+                  : "text-muted-foreground/40 hover:text-saffron"
+              }`}
+              title={isBookmarked ? "Remove from saved" : "Save verse"}
+            >
+              <LotusIcon filled={isBookmarked} className="h-5 w-5" />
+            </button>
+            <button
+              onClick={handleVisualize}
+              disabled={imageGeneration.isPending}
+              className="flex items-center gap-1.5 font-sans text-xs tracking-wide text-muted-foreground/40 transition-colors hover:text-saffron disabled:opacity-50"
+              title="Generate anime visualization"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {imageGeneration.isPending ? (
+                <span className="animate-pulse">Creating...</span>
+              ) : generatedImage ? (
+                "View Image"
+              ) : (
+                "Visualize"
+              )}
+            </button>
+          </>
+        )}
         <button
-          onClick={handleBookmark}
-          disabled={isPending}
-          className={`transition-colors disabled:opacity-50 ${
-            isBookmarked
-              ? "text-saffron hover:text-saffron/70"
-              : "text-muted-foreground/40 hover:text-saffron"
-          }`}
-          title={isBookmarked ? "Remove from saved" : "Save verse"}
+          onClick={handleShare}
+          className="font-sans text-xs tracking-wide text-muted-foreground/40 transition-colors hover:text-saffron"
         >
-          <LotusIcon filled={isBookmarked} className="h-5 w-5" />
+          {copied ? "Copied!" : "Share"}
         </button>
+      </div>
+
+      {imageGeneration.error && (
+        <p className="mt-2 font-sans text-xs text-red-400">
+          {imageGeneration.error instanceof Error ? imageGeneration.error.message : "Failed to generate image"}
+        </p>
       )}
-      <button
-        onClick={handleShare}
-        className="font-sans text-xs tracking-wide text-muted-foreground/40 transition-colors hover:text-saffron"
-      >
-        {copied ? "Copied!" : "Share"}
-      </button>
-    </div>
+
+      {generatedImage && (
+        <ImageModal
+          isOpen={showImageModal}
+          onClose={() => setShowImageModal(false)}
+          imageUrl={generatedImage.imageUrl}
+          shareUrl={generatedImage.shareUrl}
+          chapter={chapter}
+          verse={verse}
+        />
+      )}
+    </>
   );
 }
