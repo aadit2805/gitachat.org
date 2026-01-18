@@ -5,11 +5,20 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export interface RelatedVerse {
+  chapter: number;
+  verse: number;
+  translation: string;
+  summarized_commentary: string;
+}
+
 export interface VerseData {
   chapter: number;
   verse: number;
   translation: string;
   summarized_commentary: string;
+  full_commentary?: string;
+  related?: RelatedVerse[];
 }
 
 export function renderMarkdown(text: string) {
