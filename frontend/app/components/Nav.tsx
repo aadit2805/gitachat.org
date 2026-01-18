@@ -28,6 +28,11 @@ export function Nav() {
     setOpen("");
   }, [pathname]);
 
+  // Hide nav on widget page (for iframe embedding)
+  if (pathname === "/widget") {
+    return null;
+  }
+
   const closeMenu = () => setOpen("");
 
   const ListItem = ({
@@ -96,6 +101,11 @@ export function Nav() {
                     <ListItem href="/history" title="History">
                       Your past queries
                     </ListItem>
+                  </SignedIn>
+                  <ListItem href="/embed" title="Embed">
+                    Add a widget to your site
+                  </ListItem>
+                  <SignedIn>
                     <ListItem href="/settings" title="Settings">
                       Email preferences
                     </ListItem>
