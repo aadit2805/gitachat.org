@@ -80,7 +80,11 @@ app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://gitachat.org"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://gitachat.org",
+        "https://www.gitachat.org",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
