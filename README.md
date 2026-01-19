@@ -1,4 +1,5 @@
 # GitaChat
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/aadit2805/gitachat.org)
 
 Ask a question. Receive guidance from the Bhagavad Gita.
 
