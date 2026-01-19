@@ -69,6 +69,7 @@ export async function POST(req: Request) {
           verse: responseData.verse,
           translation: responseData.translation,
           summarized_commentary: responseData.summarized_commentary,
+          full_commentary: responseData.full_commentary || null,
         })
         .then(() => {}, () => {});  // Silent fire-and-forget
     }

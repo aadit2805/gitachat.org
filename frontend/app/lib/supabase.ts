@@ -16,6 +16,7 @@ export interface QueryHistoryRecord {
   verse: number;
   translation: string;
   summarized_commentary: string;
+  full_commentary?: string;
   created_at: string;
 }
 
