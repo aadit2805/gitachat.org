@@ -113,14 +113,27 @@ async def health():
 async def query_gita(request: Request, query: Query) -> dict:
     """
     Query the Gita with the provided query string(s).
+    Returns verse with contextual commentary tailored to the user's question.
     """
     try:
         from model import match
+        from utils import generate_contextual_commentary
 
         result = match(query.query)
         if not result:
             raise HTTPException(status_code=404, detail="No matches found")
+
+        # Generate contextual commentary that addresses the user's specific question
+        try:
+            contextual = generate_contextual_commentary(query.query, result)
+            result["summarized_commentary"] = contextual
+        except Exception as e:
+            # Fall back to pre-computed summary if OpenAI fails
+            logging.warning(f"Contextual commentary failed, using fallback: {e}")
+
         return {"status": "success", "data": result}
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
