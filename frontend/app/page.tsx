@@ -6,7 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import { type VerseData } from "@/lib/types";
 import { LAST_SEARCH_KEY, SUGGESTED_PROMPTS } from "@/lib/constants";
 import { VerseActions } from "@/components/VerseActions";
-import { ExpandableCommentary } from "@/components/ExpandableCommentary";
+import { DualCommentary } from "@/components/DualCommentary";
 
 interface SavedSearch {
   query: string;
@@ -83,7 +83,7 @@ function HomeContent() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 sm:px-10 md:px-12">
+      <div className={`mx-auto flex w-full flex-1 flex-col px-6 sm:px-10 md:px-12 ${resultData ? "max-w-4xl" : "max-w-2xl"}`}>
 
         {/* Main content */}
         <main className={resultData ? "pt-24 sm:pt-20" : "pt-[22vh] sm:pt-[25vh]"}>
@@ -176,16 +176,11 @@ function HomeContent() {
               {/* Divider */}
               <div className="mb-10 h-px w-16 bg-border/30" />
 
-              {/* Commentary */}
-              <div>
-                <h2 className="mb-4 font-sans text-xs font-medium uppercase tracking-widest text-saffron/80">
-                  Commentary
-                </h2>
-                <ExpandableCommentary
-                  summary={resultData.summarized_commentary}
-                  full={resultData.full_commentary}
-                />
-              </div>
+              {/* Commentary - side by side */}
+              <DualCommentary
+                contextual={resultData.summarized_commentary}
+                traditional={resultData.full_commentary}
+              />
 
               <div className="mt-10">
                 <VerseActions

@@ -3,6 +3,9 @@
 import { renderMarkdown } from "@/lib/utils";
 import { VerseActions } from "./VerseActions";
 import { ExpandableCommentary } from "./ExpandableCommentary";
+import { DualCommentary } from "./DualCommentary";
+
+type CommentaryMode = "simple" | "expandable" | "dual";
 
 interface VerseDisplayProps {
   chapter: number;
@@ -11,7 +14,7 @@ interface VerseDisplayProps {
   summarizedCommentary: string;
   fullCommentary?: string;
   showActions?: boolean;
-  useExpandableCommentary?: boolean;
+  commentaryMode?: CommentaryMode;
   badgeLabel?: string;
 }
 
@@ -22,10 +25,45 @@ export function VerseDisplay({
   summarizedCommentary,
   fullCommentary,
   showActions = true,
-  useExpandableCommentary = false,
+  commentaryMode = "simple",
   badgeLabel,
 }: VerseDisplayProps) {
   const badge = badgeLabel ?? `Chapter ${chapter}, Verse ${verse}`;
+
+  const renderCommentary = () => {
+    switch (commentaryMode) {
+      case "dual":
+        return (
+          <DualCommentary
+            contextual={summarizedCommentary}
+            traditional={fullCommentary}
+          />
+        );
+      case "expandable":
+        return (
+          <>
+            <h2 className="mb-4 font-sans text-xs font-medium uppercase tracking-widest text-saffron/80">
+              Commentary
+            </h2>
+            <ExpandableCommentary
+              summary={summarizedCommentary}
+              full={fullCommentary}
+            />
+          </>
+        );
+      default:
+        return (
+          <>
+            <h2 className="mb-4 font-sans text-xs font-medium uppercase tracking-widest text-saffron/80">
+              Commentary
+            </h2>
+            <p className="text-base leading-loose tracking-wide text-foreground/70 sm:text-lg">
+              {renderMarkdown(summarizedCommentary)}
+            </p>
+          </>
+        );
+    }
+  };
 
   return (
     <article className="animate-slow-rise">
@@ -47,21 +85,7 @@ export function VerseDisplay({
       <div className="mb-10 h-px w-16 bg-border/30" />
 
       {/* Commentary */}
-      <div>
-        <h2 className="mb-4 font-sans text-xs font-medium uppercase tracking-widest text-saffron/80">
-          Commentary
-        </h2>
-        {useExpandableCommentary ? (
-          <ExpandableCommentary
-            summary={summarizedCommentary}
-            full={fullCommentary}
-          />
-        ) : (
-          <p className="text-base leading-loose tracking-wide text-foreground/70 sm:text-lg">
-            {renderMarkdown(summarizedCommentary)}
-          </p>
-        )}
-      </div>
+      <div>{renderCommentary()}</div>
 
       {/* Actions */}
       {showActions && (

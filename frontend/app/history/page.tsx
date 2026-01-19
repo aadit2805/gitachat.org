@@ -68,9 +68,12 @@ export default function HistoryPage() {
   }
 
   if (selectedItem) {
+    // Use dual commentary if we have full_commentary, otherwise simple
+    const hasDualCommentary = !!selectedItem.full_commentary;
+
     return (
       <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
-        <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-16 sm:px-10 sm:pt-16 md:px-12">
+        <div className={`mx-auto flex w-full flex-1 flex-col px-6 pt-16 sm:px-10 sm:pt-16 md:px-12 ${hasDualCommentary ? "max-w-4xl" : "max-w-2xl"}`}>
           <button
             onClick={() => setSelectedItem(null)}
             className="mb-12 block font-sans text-sm tracking-wide text-muted-foreground/60 transition-colors hover:text-foreground"
@@ -91,6 +94,8 @@ export default function HistoryPage() {
             verse={selectedItem.verse}
             translation={selectedItem.translation}
             summarizedCommentary={selectedItem.summarized_commentary}
+            fullCommentary={selectedItem.full_commentary}
+            commentaryMode={hasDualCommentary ? "dual" : "simple"}
           />
         </div>
       </div>
