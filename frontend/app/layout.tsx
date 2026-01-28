@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Analytics } from "@vercel/analytics/react";
 import { Nav } from "./components/Nav";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -115,6 +116,7 @@ export default function RootLayout({
         <body className={`${cormorant.variable} ${dmSans.variable} font-serif`}>
           <Nav />
           <Providers>{children}</Providers>
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>
