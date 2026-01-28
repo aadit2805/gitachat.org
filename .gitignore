@@ -22,3 +22,4 @@ venv/
 /backend/data/
 /backend/embeddings/
 supabase/
+.vercel

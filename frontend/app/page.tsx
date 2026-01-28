@@ -7,6 +7,7 @@ import { type VerseData } from "@/lib/types";
 import { LAST_SEARCH_KEY, SUGGESTED_PROMPTS } from "@/lib/constants";
 import { VerseActions } from "@/components/VerseActions";
 import { DualCommentary } from "@/components/DualCommentary";
+import { AmbientBackground, LoadingLotus } from "@/components/three";
 
 interface SavedSearch {
   query: string;
@@ -82,8 +83,15 @@ function HomeContent() {
   if (!mounted) return null;
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
-      <div className={`mx-auto flex w-full flex-1 flex-col px-6 sm:px-10 md:px-12 ${resultData ? "max-w-4xl" : "max-w-2xl"}`}>
+    <div className="relative flex min-h-screen flex-col">
+      {/* Background gradient layer */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]" />
+
+      {/* Particle layer */}
+      <AmbientBackground />
+
+      {/* Content layer */}
+      <div className={`relative z-10 mx-auto flex w-full flex-1 flex-col px-6 sm:px-10 md:px-12 ${resultData ? "max-w-4xl" : "max-w-2xl"}`}>
 
         {/* Main content */}
         <main className={resultData ? "pt-24 sm:pt-20" : "pt-[22vh] sm:pt-[25vh]"}>
@@ -107,7 +115,7 @@ function HomeContent() {
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="What is troubling you?"
+                  placeholder="What's on your mind?"
                   className="mb-6 w-full border-b border-border/40 bg-transparent pb-3 text-xl tracking-wide placeholder:text-muted-foreground/30 focus:border-saffron/60 focus:outline-none sm:text-2xl"
                   required
                   autoFocus
@@ -118,11 +126,7 @@ function HomeContent() {
                   disabled={mutation.isPending || !query.trim()}
                   className="bg-saffron px-10 py-3.5 font-sans text-sm font-medium tracking-wider text-white transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
-                  {mutation.isPending ? (
-                    <span className="animate-think">Seeking...</span>
-                  ) : (
-                    "Ask"
-                  )}
+                  {mutation.isPending ? <LoadingLotus /> : "Ask"}
                 </button>
               </form>
 
@@ -235,8 +239,9 @@ function HomeContent() {
 export default function Home() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen flex-col bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]">
-        <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-[22vh] sm:px-10 sm:pt-[25vh] md:px-12">
+      <div className="relative flex min-h-screen flex-col">
+        <div className="fixed inset-0 bg-gradient-to-b from-background via-background to-[hsl(25_20%_6%)]" />
+        <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pt-[22vh] sm:px-10 sm:pt-[25vh] md:px-12">
           <header className="mb-16">
             <h1 className="text-6xl font-medium tracking-[0.04em] sm:text-7xl md:text-8xl">
               GitaChat
