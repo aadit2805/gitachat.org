@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { supabase } from "@/lib/supabase";
 
-// Add your Clerk user ID here to restrict admin access
-const ADMIN_USER_IDS = process.env.ADMIN_USER_IDS?.split(",") || [];
+const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "")
+  .split(",")
+  .map((id) => id.trim())
+  .filter((id) => id.length > 0);
 
 export async function GET() {
   try {
@@ -32,10 +34,10 @@ export async function GET() {
       bookmarkCountResult,
       emailSubCountResult,
     ] = await Promise.all([
-      // Overall stats
+      // Overall stats - use head: true for count, fetch distinct user_ids separately
       supabase
         .from("query_history")
-        .select("user_id", { count: "exact", head: false }),
+        .select("user_id", { count: "exact", head: true }),
 
       // Top users by query count
       supabase.rpc("get_top_users", { limit_count: 15 }),
@@ -65,14 +67,9 @@ export async function GET() {
         .eq("is_active", true),
     ]);
 
-    // Calculate unique users from query_history
-    const uniqueUserIds = new Set(
-      userStatsResult.data?.map((r: { user_id: string }) => r.user_id) || []
-    );
-
     return NextResponse.json({
       overview: {
-        totalUsers: uniqueUserIds.size,
+        totalUsers: topUsersResult.data?.length || 0,
         totalQueries: userStatsResult.count || 0,
         totalBookmarks: bookmarkCountResult.count || 0,
         emailSubscribers: emailSubCountResult.count || 0,
