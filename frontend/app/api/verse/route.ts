@@ -23,19 +23,29 @@ export async function POST(req: Request) {
     }
 
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
-    const response = await fetch(`${backendUrl}/api/verse`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chapter, verse }),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch(`${backendUrl}/api/verse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chapter, verse }),
+        signal: controller.signal,
+      });
 
-    if (!response.ok) {
-      return NextResponse.json({ error: "Verse not found" }, { status: 404 });
+      if (!response.ok) {
+        return NextResponse.json({ error: "Verse not found" }, { status: 404 });
+      }
+
+      const data = await response.json();
+      return NextResponse.json(data);
+    } finally {
+      clearTimeout(timeout);
     }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      return NextResponse.json({ error: "Request timed out" }, { status: 504 });
+    }
     return NextResponse.json({ error: "Failed to fetch verse" }, { status: 500 });
   }
 }

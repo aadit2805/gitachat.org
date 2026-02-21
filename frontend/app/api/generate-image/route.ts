@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { supabase } from "@/lib/supabase";
 import { rateLimit, getClientId } from "@/lib/rate-limit";
 import { generateImage, buildPrompt, hashPrompt } from "@/lib/replicate";
+import { isValidChapterVerse, parseIntSafe, MAX_TEXT_LENGTH } from "@/lib/validation";
 
 // Stricter rate limit for image generation: 5 per hour
 const RATE_LIMIT = { limit: 5, windowMs: 60 * 60 * 1000 };
@@ -35,6 +36,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    if (!isValidChapterVerse(chapter, verse)) {
+      return NextResponse.json({ error: "Invalid chapter or verse" }, { status: 400 });
+    }
+
+    if (typeof translation !== "string" || translation.length > MAX_TEXT_LENGTH) {
+      return NextResponse.json({ error: "Invalid translation text" }, { status: 400 });
+    }
+
     // Build prompt and check cache
     const prompt = buildPrompt(translation);
     const promptHash = hashPrompt(prompt);
@@ -60,8 +69,15 @@ export async function POST(req: Request) {
     // Generate new image
     const replicateImageUrl = await generateImage(prompt);
 
-    // Download the image from Replicate
-    const imageResponse = await fetch(replicateImageUrl);
+    // Download the image from Replicate with timeout
+    const downloadController = new AbortController();
+    const downloadTimeout = setTimeout(() => downloadController.abort(), 30000);
+    let imageResponse: Response;
+    try {
+      imageResponse = await fetch(replicateImageUrl, { signal: downloadController.signal });
+    } finally {
+      clearTimeout(downloadTimeout);
+    }
     if (!imageResponse.ok) {
       throw new Error("Failed to download generated image");
     }
@@ -128,19 +144,19 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const chapter = searchParams.get("chapter");
-    const verse = searchParams.get("verse");
+    const chapter = parseIntSafe(searchParams.get("chapter"));
+    const verse = parseIntSafe(searchParams.get("verse"));
 
-    if (!chapter || !verse) {
-      return NextResponse.json({ error: "Missing chapter or verse" }, { status: 400 });
+    if (isNaN(chapter) || isNaN(verse) || !isValidChapterVerse(chapter, verse)) {
+      return NextResponse.json({ error: "Invalid chapter or verse" }, { status: 400 });
     }
 
     // Get the most recent image for this verse
     const { data: existingImage } = await supabase
       .from("verse_images")
       .select("*")
-      .eq("chapter", parseInt(chapter))
-      .eq("verse", parseInt(verse))
+      .eq("chapter", chapter)
+      .eq("verse", verse)
       .order("created_at", { ascending: false })
       .limit(1)
       .single();

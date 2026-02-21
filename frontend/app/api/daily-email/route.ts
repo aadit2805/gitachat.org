@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { Resend } from "resend";
 import { supabase } from "@/lib/supabase";
 import { generateDailyVerseEmail } from "@/lib/email-templates";
@@ -94,13 +95,23 @@ async function getDailyVerseForUser(
   const candidates = unseenVerses.length > 0 ? unseenVerses : allVerses;
   const selected = candidates[Math.floor(Math.random() * candidates.length)];
 
-  // Fetch verse from backend
+  // Fetch verse from backend with timeout
   const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
-  const response = await fetch(`${backendUrl}/api/verse`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chapter: selected.chapter, verse: selected.verse }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  let response: Response;
+  try {
+    response = await fetch(`${backendUrl}/api/verse`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chapter: selected.chapter, verse: selected.verse }),
+      signal: controller.signal,
+    });
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) return null;
 
@@ -123,9 +134,15 @@ async function getDailyVerseForUser(
 
 export async function POST(req: Request) {
   try {
-    // Verify cron secret
-    const authHeader = req.headers.get("authorization");
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    // Verify cron secret with timing-safe comparison
+    const authHeader = req.headers.get("authorization") || "";
+    const expected = `Bearer ${process.env.CRON_SECRET}`;
+    const authBuf = Buffer.from(authHeader);
+    const expectedBuf = Buffer.from(expected);
+    if (
+      authBuf.length !== expectedBuf.length ||
+      !timingSafeEqual(authBuf, expectedBuf)
+    ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -167,7 +184,7 @@ export async function POST(req: Request) {
       try {
         const verse = await getDailyVerseForUser(subscriber.user_id, subscriber.timezone);
         if (!verse) {
-          errors.push(`Failed to get verse for ${subscriber.user_id}`);
+          errors.push("Failed to get verse for a subscriber");
           continue;
         }
 
@@ -189,7 +206,8 @@ export async function POST(req: Request) {
         });
 
         if (sendError) {
-          errors.push(`Failed to send to ${subscriber.email}: ${sendError.message}`);
+          console.error(`Failed to send to subscriber: ${sendError.message}`);
+          errors.push("Failed to send email to a subscriber");
           continue;
         }
 
@@ -201,7 +219,8 @@ export async function POST(req: Request) {
 
         sentCount++;
       } catch (err) {
-        errors.push(`Error processing ${subscriber.user_id}: ${err instanceof Error ? err.message : "Unknown"}`);
+        console.error(`Error processing subscriber: ${err instanceof Error ? err.message : "Unknown"}`);
+        errors.push("Error processing a subscriber");
       }
     }
 

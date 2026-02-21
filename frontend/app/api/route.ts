@@ -36,13 +36,24 @@ export async function POST(req: Request) {
     }
 
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
-    const response = await fetch(`${backendUrl}/api/query`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ query: query.trim() }),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+    let response: Response;
+    try {
+      response = await fetch(`${backendUrl}/api/query`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: query.trim() }),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return NextResponse.json({ error: "Request timed out. Please try again." }, { status: 504 });
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
+    }
 
     const data = await response.json();
 
@@ -71,7 +82,10 @@ export async function POST(req: Request) {
           summarized_commentary: responseData.summarized_commentary,
           full_commentary: responseData.full_commentary || null,
         })
-        .then(() => {}, () => {});  // Silent fire-and-forget
+        .then(
+          () => {},
+          (err) => console.error("Failed to save query history:", err)
+        );
     }
 
     return NextResponse.json(responseData);

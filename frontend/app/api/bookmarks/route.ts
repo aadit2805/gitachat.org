@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { supabase } from "@/lib/supabase";
 import { rateLimit, getClientId } from "@/lib/rate-limit";
+import { isValidChapterVerse, parseIntSafe, MAX_TEXT_LENGTH } from "@/lib/validation";
 
 const RATE_LIMIT = { limit: 30, windowMs: 60000 };
 
@@ -60,6 +61,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    if (!isValidChapterVerse(chapter, verse)) {
+      return NextResponse.json({ error: "Invalid chapter or verse" }, { status: 400 });
+    }
+
+    if (typeof translation !== "string" || translation.length > MAX_TEXT_LENGTH ||
+        typeof summarized_commentary !== "string" || summarized_commentary.length > MAX_TEXT_LENGTH) {
+      return NextResponse.json({ error: "Text too long" }, { status: 400 });
+    }
+
     const { error } = await supabase.from("bookmarks").insert({
       user_id: userId,
       chapter,
@@ -99,19 +109,19 @@ export async function DELETE(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const chapter = searchParams.get("chapter");
-    const verse = searchParams.get("verse");
+    const chapter = parseIntSafe(searchParams.get("chapter"));
+    const verse = parseIntSafe(searchParams.get("verse"));
 
-    if (!chapter || !verse) {
-      return NextResponse.json({ error: "Missing chapter or verse" }, { status: 400 });
+    if (isNaN(chapter) || isNaN(verse) || !isValidChapterVerse(chapter, verse)) {
+      return NextResponse.json({ error: "Invalid chapter or verse" }, { status: 400 });
     }
 
     const { error } = await supabase
       .from("bookmarks")
       .delete()
       .eq("user_id", userId)
-      .eq("chapter", parseInt(chapter))
-      .eq("verse", parseInt(verse));
+      .eq("chapter", chapter)
+      .eq("verse", verse);
 
     if (error) throw error;
 

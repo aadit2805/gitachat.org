@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { supabase } from "@/lib/supabase";
+import { isValidChapterVerse, parseIntSafe, MAX_NOTE_LENGTH } from "@/lib/validation";
 
 // GET - Fetch note for a specific verse (or all notes)
 export async function GET(req: Request) {
@@ -19,13 +20,19 @@ export async function GET(req: Request) {
     const verse = searchParams.get("verse");
 
     if (chapter && verse) {
+      const ch = parseIntSafe(chapter);
+      const v = parseIntSafe(verse);
+      if (isNaN(ch) || isNaN(v) || !isValidChapterVerse(ch, v)) {
+        return NextResponse.json({ error: "Invalid chapter or verse" }, { status: 400 });
+      }
+
       // Fetch specific note
       const { data, error } = await supabase
         .from("verse_notes")
         .select("*")
         .eq("user_id", userId)
-        .eq("chapter", parseInt(chapter))
-        .eq("verse", parseInt(verse))
+        .eq("chapter", ch)
+        .eq("verse", v)
         .single();
 
       if (error && error.code !== "PGRST116") {
@@ -75,6 +82,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    if (!isValidChapterVerse(chapter, verse)) {
+      return NextResponse.json({ error: "Invalid chapter or verse" }, { status: 400 });
+    }
+
+    if (note_text.trim().length > MAX_NOTE_LENGTH) {
+      return NextResponse.json({ error: "Note text too long" }, { status: 400 });
+    }
+
     // Upsert the note (insert or update if exists)
     const { data, error } = await supabase
       .from("verse_notes")
@@ -118,19 +133,19 @@ export async function DELETE(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const chapter = searchParams.get("chapter");
-    const verse = searchParams.get("verse");
+    const ch = parseIntSafe(searchParams.get("chapter"));
+    const v = parseIntSafe(searchParams.get("verse"));
 
-    if (!chapter || !verse) {
-      return NextResponse.json({ error: "Missing chapter or verse" }, { status: 400 });
+    if (isNaN(ch) || isNaN(v) || !isValidChapterVerse(ch, v)) {
+      return NextResponse.json({ error: "Invalid chapter or verse" }, { status: 400 });
     }
 
     const { error } = await supabase
       .from("verse_notes")
       .delete()
       .eq("user_id", userId)
-      .eq("chapter", parseInt(chapter))
-      .eq("verse", parseInt(verse));
+      .eq("chapter", ch)
+      .eq("verse", v);
 
     if (error) {
       console.error("Error deleting note:", error);

@@ -95,13 +95,21 @@ export async function GET(req: Request) {
     const randomIndex = Math.floor(Math.random() * candidates.length);
     const selected = candidates[randomIndex];
 
-    // Fetch the verse from backend
+    // Fetch the verse from backend with timeout
     const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
-    const response = await fetch(`${backendUrl}/api/verse`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chapter: selected.chapter, verse: selected.verse }),
-    });
+    const controller = new AbortController();
+    const fetchTimeout = setTimeout(() => controller.abort(), 15000);
+    let response: Response;
+    try {
+      response = await fetch(`${backendUrl}/api/verse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chapter: selected.chapter, verse: selected.verse }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(fetchTimeout);
+    }
 
     if (!response.ok) {
       throw new Error("Failed to fetch verse from backend");
