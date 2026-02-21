@@ -6,6 +6,7 @@ interface RateLimitEntry {
   resetTime: number;
 }
 
+const MAX_MAP_SIZE = 10000;
 const rateLimitMap = new Map<string, RateLimitEntry>();
 
 // Clean up old entries periodically to prevent memory leaks
@@ -15,6 +16,10 @@ setInterval(() => {
     if (now > entry.resetTime) {
       rateLimitMap.delete(key);
     }
+  }
+  // Emergency flush if map grows too large
+  if (rateLimitMap.size > MAX_MAP_SIZE) {
+    rateLimitMap.clear();
   }
 }, 60000); // Clean every minute
 
