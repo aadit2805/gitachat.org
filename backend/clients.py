@@ -17,8 +17,8 @@ from sentence_transformers import SentenceTransformer
 pc = Pinecone(api_key=PINECONE_API_KEY)
 index = pc.Index(PINECONE_INDEX)
 
-# OpenAI client
-openai_client = OpenAI(api_key=GPT_KEY)
+# OpenAI client with timeout
+openai_client = OpenAI(api_key=GPT_KEY, timeout=30.0)
 
 # Embedding model - BGE base (768-dim, top MTEB performance)
 embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)

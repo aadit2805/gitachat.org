@@ -16,10 +16,17 @@ os.environ["MKL_NUM_THREADS"] = "1"
 import torch
 torch.set_num_threads(1)
 
-# API Keys
+# API Keys (validated at startup)
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_INDEX = os.getenv("PINECONE_INDEX")
 GPT_KEY = os.getenv("GPT_KEY")
+
+if not PINECONE_API_KEY:
+    raise ValueError("PINECONE_API_KEY environment variable is required")
+if not PINECONE_INDEX:
+    raise ValueError("PINECONE_INDEX environment variable is required")
+if not GPT_KEY:
+    raise ValueError("GPT_KEY environment variable is required")
 
 # Model configuration
 EMBEDDING_MODEL_NAME = "BAAI/bge-base-en-v1.5"

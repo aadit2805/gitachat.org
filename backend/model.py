@@ -33,7 +33,7 @@ def get_verse(chapter: int, verse: int):
     return result
 
 
-def match(query, all_verses=None):
+def match(query):
     """Find the best matching verse for a query using semantic search."""
     # BGE models work best with instruction prefix for queries
     query_with_instruction = (

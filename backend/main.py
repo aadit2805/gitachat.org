@@ -86,8 +86,8 @@ app.add_middleware(
         "https://www.gitachat.org",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
@@ -104,7 +104,7 @@ class Query(BaseModel):
 
 class VerseRequest(BaseModel):
     chapter: int = Field(..., ge=1, le=18)
-    verse: int = Field(..., ge=1)
+    verse: int = Field(..., ge=1, le=78)
 
 
 @app.get("/health")
@@ -139,7 +139,7 @@ async def query_gita(request: Request, query: Query) -> dict:
     except HTTPException:
         raise
     except Exception as e:
-        logging.error(f"Error occurred: {str(e)}")
+        logging.error(f"Query error: {type(e).__name__}: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
@@ -164,7 +164,8 @@ async def get_specific_verse(request: Request, verse_req: VerseRequest) -> dict:
 
 
 @app.get("/api/all-verses")
-async def get_all_verses():
+@limiter.limit("10/minute")
+async def get_all_verses(request: Request):
     """
     Get all verses for client-side search.
     Returns chapter, verse, translation, and summary for all 703 verses.
