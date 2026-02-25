@@ -9,7 +9,7 @@ interface RateLimitEntry {
 const MAX_MAP_SIZE = 10000;
 const rateLimitMap = new Map<string, RateLimitEntry>();
 
-// Clean up old entries periodically to prevent memory leaks
+// Clean up expired entries periodically to prevent memory leaks
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of rateLimitMap.entries()) {
@@ -17,9 +17,14 @@ setInterval(() => {
       rateLimitMap.delete(key);
     }
   }
-  // Emergency flush if map grows too large
+  // If still over limit after purging expired entries, evict oldest
   if (rateLimitMap.size > MAX_MAP_SIZE) {
-    rateLimitMap.clear();
+    const entriesToEvict = rateLimitMap.size - MAX_MAP_SIZE;
+    const iterator = rateLimitMap.keys();
+    for (let i = 0; i < entriesToEvict; i++) {
+      const key = iterator.next().value;
+      if (key) rateLimitMap.delete(key);
+    }
   }
 }, 60000); // Clean every minute
 
