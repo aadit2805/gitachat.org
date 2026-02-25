@@ -3,29 +3,10 @@ import { timingSafeEqual } from "crypto";
 import { Resend } from "resend";
 import { supabase } from "@/lib/supabase";
 import { generateDailyVerseEmail } from "@/lib/email-templates";
+import { getAllVerseRefs } from "@/lib/chapters";
+import { getTodayDateString } from "@/lib/date";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-
-// Bhagavad Gita verse counts per chapter (18 chapters, 700 verses total)
-const VERSES_PER_CHAPTER = [47, 72, 43, 42, 29, 47, 30, 28, 34, 42, 55, 20, 35, 27, 20, 24, 28, 78];
-
-function getAllVerses(): { chapter: number; verse: number }[] {
-  const verses: { chapter: number; verse: number }[] = [];
-  VERSES_PER_CHAPTER.forEach((count, idx) => {
-    for (let v = 1; v <= count; v++) {
-      verses.push({ chapter: idx + 1, verse: v });
-    }
-  });
-  return verses;
-}
-
-function getTodayDateString(timezone: string): string {
-  try {
-    return new Date().toLocaleDateString("en-CA", { timeZone: timezone });
-  } catch {
-    return new Date().toISOString().split("T")[0];
-  }
-}
 
 function getTimezonesAt8AM(now: Date): string[] {
   const targetHour = 8;
@@ -90,7 +71,7 @@ async function getDailyVerseForUser(
   const seenSet = new Set((history || []).map((h) => `${h.chapter}:${h.verse}`));
 
   // Pick random unseen verse
-  const allVerses = getAllVerses();
+  const allVerses = getAllVerseRefs();
   const unseenVerses = allVerses.filter((v) => !seenSet.has(`${v.chapter}:${v.verse}`));
   const candidates = unseenVerses.length > 0 ? unseenVerses : allVerses;
   const selected = candidates[Math.floor(Math.random() * candidates.length)];

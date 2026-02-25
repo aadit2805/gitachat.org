@@ -3,15 +3,10 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
-import { type VerseData } from "@/lib/types";
+import { type VerseData, type SavedSearch } from "@/lib/types";
 import { LAST_SEARCH_KEY, SUGGESTED_PROMPTS } from "@/lib/constants";
 import { VerseActions } from "@/components/VerseActions";
 import { DualCommentary } from "@/components/DualCommentary";
-
-interface SavedSearch {
-  query: string;
-  result: VerseData;
-}
 
 async function submitQuery(query: string): Promise<VerseData> {
   const res = await fetch("/api", {

@@ -54,7 +54,6 @@ export interface Note {
   id: string;
   chapter: number;
   verse: number;
-  content: string;
-  created_at: string;
+  note_text: string;
   updated_at: string;
 }

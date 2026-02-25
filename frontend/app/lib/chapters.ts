@@ -200,3 +200,17 @@ export function isValidVerse(chapter: number, verse: number): boolean {
     verse <= (VERSES_PER_CHAPTER[chapter] ?? 0)
   );
 }
+
+/**
+ * Get all verse references as {chapter, verse} pairs.
+ * Used by daily verse selection to pick from the full set of 700 verses.
+ */
+export function getAllVerseRefs(): { chapter: number; verse: number }[] {
+  const verses: { chapter: number; verse: number }[] = [];
+  for (const ch of CHAPTERS) {
+    for (let v = 1; v <= ch.verses; v++) {
+      verses.push({ chapter: ch.number, verse: v });
+    }
+  }
+  return verses;
+}

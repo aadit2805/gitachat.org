@@ -2,30 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { supabase } from "@/lib/supabase";
 import { rateLimit, getClientId } from "@/lib/rate-limit";
+import { getAllVerseRefs } from "@/lib/chapters";
+import { getTodayDateString } from "@/lib/date";
 
 const RATE_LIMIT = { limit: 10, windowMs: 60000 };
-
-// Bhagavad Gita verse counts per chapter (18 chapters, 700 verses total)
-const VERSES_PER_CHAPTER = [47, 72, 43, 42, 29, 47, 30, 28, 34, 42, 55, 20, 35, 27, 20, 24, 28, 78];
-
-// Generate list of all verse references
-function getAllVerses(): { chapter: number; verse: number }[] {
-  const verses: { chapter: number; verse: number }[] = [];
-  VERSES_PER_CHAPTER.forEach((count, idx) => {
-    for (let v = 1; v <= count; v++) {
-      verses.push({ chapter: idx + 1, verse: v });
-    }
-  });
-  return verses;
-}
-
-function getTodayDateString(timezone: string): string {
-  try {
-    return new Date().toLocaleDateString("en-CA", { timeZone: timezone }); // en-CA gives YYYY-MM-DD format
-  } catch {
-    return new Date().toISOString().split("T")[0];
-  }
-}
 
 export async function GET(req: Request) {
   try {
@@ -85,7 +65,7 @@ export async function GET(req: Request) {
     );
 
     // Get all verses and filter out seen ones
-    const allVerses = getAllVerses();
+    const allVerses = getAllVerseRefs();
     const unseenVerses = allVerses.filter(
       (v) => !seenSet.has(`${v.chapter}:${v.verse}`)
     );
