@@ -5,18 +5,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import { PenLine, X, Trash2 } from "lucide-react";
 import { createPortal } from "react-dom";
+import type { Note } from "@/lib/types";
 
 interface VerseNoteProps {
   chapter: number;
   verse: number;
-}
-
-interface Note {
-  id: string;
-  chapter: number;
-  verse: number;
-  note_text: string;
-  updated_at: string;
 }
 
 async function fetchNote(chapter: number, verse: number): Promise<Note | null> {
@@ -59,20 +52,30 @@ export function VerseNote({ chapter, verse }: VerseNoteProps) {
     enabled: isSignedIn,
   });
 
+  const [error, setError] = useState<string | null>(null);
+
   const saveMutation = useMutation({
     mutationFn: saveNote,
     onSuccess: () => {
+      setError(null);
       queryClient.invalidateQueries({ queryKey: ["note", chapter, verse] });
       setIsOpen(false);
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : "Failed to save note");
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteNote(chapter, verse),
     onSuccess: () => {
+      setError(null);
       queryClient.invalidateQueries({ queryKey: ["note", chapter, verse] });
       setNoteText("");
       setIsOpen(false);
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : "Failed to delete note");
     },
   });
 
@@ -139,6 +142,11 @@ export function VerseNote({ chapter, verse }: VerseNoteProps) {
           className="h-40 w-full resize-none rounded-lg border border-border/30 bg-black/30 p-3 font-sans text-sm leading-relaxed text-foreground/80 placeholder:text-muted-foreground/30 focus:border-saffron/50 focus:outline-none"
           autoFocus
         />
+
+        {/* Error */}
+        {error && (
+          <p className="mt-2 font-sans text-xs text-red-400">{error}</p>
+        )}
 
         {/* Actions */}
         <div className="mt-4 flex items-center justify-between">

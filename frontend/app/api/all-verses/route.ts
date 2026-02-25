@@ -23,7 +23,8 @@ export async function GET() {
     const res = NextResponse.json(data);
     res.headers.set("Cache-Control", "public, max-age=3600, s-maxage=3600");
     return res;
-  } catch {
+  } catch (err) {
+    console.error("All-verses error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Failed to fetch verses" }, { status: 500 });
   }
 }

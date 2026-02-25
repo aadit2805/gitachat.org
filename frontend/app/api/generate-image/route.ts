@@ -170,7 +170,8 @@ export async function GET(req: Request) {
       imageUrl: existingImage.image_url,
       shareUrl: `${process.env.NEXT_PUBLIC_APP_URL || ""}/image/${existingImage.id}`,
     });
-  } catch {
+  } catch (err) {
+    console.error("Image GET error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Failed to check for existing image" }, { status: 500 });
   }
 }

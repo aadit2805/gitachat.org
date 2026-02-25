@@ -46,6 +46,7 @@ export async function POST(req: Request) {
     if (err instanceof Error && err.name === "AbortError") {
       return NextResponse.json({ error: "Request timed out" }, { status: 504 });
     }
+    console.error("Verse error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Failed to fetch verse" }, { status: 500 });
   }
 }

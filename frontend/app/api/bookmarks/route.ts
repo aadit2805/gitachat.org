@@ -32,7 +32,8 @@ export async function GET(req: Request) {
     if (error) throw error;
 
     return NextResponse.json(data);
-  } catch {
+  } catch (err) {
+    console.error("Bookmarks GET error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Failed to fetch bookmarks" }, { status: 500 });
   }
 }
@@ -86,7 +87,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (err) {
+    console.error("Bookmarks POST error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Failed to save bookmark" }, { status: 500 });
   }
 }
@@ -126,7 +128,8 @@ export async function DELETE(req: Request) {
     if (error) throw error;
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (err) {
+    console.error("Bookmarks DELETE error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Failed to remove bookmark" }, { status: 500 });
   }
 }
