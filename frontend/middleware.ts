@@ -18,8 +18,8 @@ export default clerkMiddleware(async (auth, req) => {
       return NextResponse.redirect(new URL("/", req.url));
     }
 
-    // Must be in admin list (if list is configured)
-    if (ADMIN_USER_IDS.length > 0 && !ADMIN_USER_IDS.includes(userId)) {
+    // Must be in admin list
+    if (!ADMIN_USER_IDS.includes(userId)) {
       return NextResponse.redirect(new URL("/", req.url));
     }
   }

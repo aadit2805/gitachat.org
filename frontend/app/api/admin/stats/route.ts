@@ -16,7 +16,7 @@ export async function GET() {
     }
 
     // Check if user is admin
-    if (ADMIN_USER_IDS.length > 0 && !ADMIN_USER_IDS.includes(userId)) {
+    if (!ADMIN_USER_IDS.includes(userId)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
