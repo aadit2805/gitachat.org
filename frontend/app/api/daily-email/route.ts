@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { Resend } from "resend";
 import { supabase } from "@/lib/supabase";
 import { generateDailyVerseEmail } from "@/lib/email-templates";
 import { getAllVerseRefs } from "@/lib/chapters";
 import { getTodayDateString } from "@/lib/date";
+
+export const maxDuration = 300;
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -113,112 +115,126 @@ async function getDailyVerseForUser(
   return verse;
 }
 
-export async function POST(req: Request) {
-  try {
-    // Verify cron secret with timing-safe comparison
-    const cronSecret = process.env.CRON_SECRET;
-    if (!cronSecret) {
-      return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
-    }
-    const authHeader = req.headers.get("authorization") || "";
-    const expected = `Bearer ${cronSecret}`;
-    const authBuf = Buffer.from(authHeader);
-    const expectedBuf = Buffer.from(expected);
-    if (
-      authBuf.length !== expectedBuf.length ||
-      !timingSafeEqual(authBuf, expectedBuf)
-    ) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+type Subscriber = {
+  user_id: string;
+  email: string;
+  timezone: string;
+  unsubscribe_token: string;
+};
 
-    if (!supabase) {
-      return NextResponse.json({ error: "Database not configured" }, { status: 503 });
-    }
+async function sendDailyEmailToSubscriber(subscriber: Subscriber): Promise<boolean> {
+  if (!supabase) return false;
 
-    if (!process.env.RESEND_API_KEY) {
-      return NextResponse.json({ error: "Email service not configured" }, { status: 503 });
-    }
-
-    const now = new Date();
-    const targetTimezones = getTimezonesAt8AM(now);
-
-    if (targetTimezones.length === 0) {
-      return NextResponse.json({ sent: 0, message: "No timezones at 6am" });
-    }
-
-    // Get active subscribers in target timezones
-    const { data: subscribers, error } = await supabase
-      .from("email_subscribers")
-      .select("*")
-      .in("timezone", targetTimezones)
-      .eq("is_active", true);
-
-    if (error) {
-      console.error("Supabase query error:", error);
-      return NextResponse.json({ error: "Database error" }, { status: 500 });
-    }
-
-    if (!subscribers || subscribers.length === 0) {
-      return NextResponse.json({ sent: 0, message: "No subscribers in target timezones" });
-    }
-
-    let sentCount = 0;
-    const errors: string[] = [];
-
-    for (const subscriber of subscribers) {
-      try {
-        const verse = await getDailyVerseForUser(subscriber.user_id, subscriber.timezone);
-        if (!verse) {
-          errors.push("Failed to get verse for a subscriber");
-          continue;
-        }
-
-        const unsubscribeUrl = `https://gitachat.org/api/unsubscribe?token=${subscriber.unsubscribe_token}`;
-        const email = generateDailyVerseEmail({
-          chapter: verse.chapter,
-          verse: verse.verse,
-          translation: verse.translation,
-          commentary: verse.summarized_commentary,
-          unsubscribeUrl,
-        });
-
-        const { error: sendError } = await resend.emails.send({
-          from: "GitaChat <daily@gitachat.org>",
-          to: subscriber.email,
-          subject: email.subject,
-          html: email.html,
-          text: email.text,
-        });
-
-        if (sendError) {
-          console.error(`Failed to send to subscriber: ${sendError.message}`);
-          errors.push("Failed to send email to a subscriber");
-          continue;
-        }
-
-        // Update last_email_sent_at
-        await supabase
-          .from("email_subscribers")
-          .update({ last_email_sent_at: new Date().toISOString() })
-          .eq("user_id", subscriber.user_id);
-
-        sentCount++;
-      } catch (err) {
-        console.error(`Error processing subscriber: ${err instanceof Error ? err.message : "Unknown"}`);
-        errors.push("Error processing a subscriber");
-      }
-    }
-
-    return NextResponse.json({
-      sent: sentCount,
-      total: subscribers.length,
-      timezones: targetTimezones,
-      errors: errors.length > 0 ? errors : undefined,
-    });
-  } catch (err) {
-    console.error("Daily email cron error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  const verse = await getDailyVerseForUser(subscriber.user_id, subscriber.timezone);
+  if (!verse) {
+    console.error(`Failed to get verse for subscriber ${subscriber.user_id}`);
+    return false;
   }
+
+  const unsubscribeUrl = `https://gitachat.org/api/unsubscribe?token=${subscriber.unsubscribe_token}`;
+  const email = generateDailyVerseEmail({
+    chapter: verse.chapter,
+    verse: verse.verse,
+    translation: verse.translation,
+    commentary: verse.summarized_commentary,
+    unsubscribeUrl,
+  });
+
+  const { error: sendError } = await resend.emails.send({
+    from: "GitaChat <daily@gitachat.org>",
+    to: subscriber.email,
+    subject: email.subject,
+    html: email.html,
+    text: email.text,
+  });
+
+  if (sendError) {
+    console.error(`Failed to send to ${subscriber.user_id}: ${sendError.message}`);
+    return false;
+  }
+
+  await supabase
+    .from("email_subscribers")
+    .update({ last_email_sent_at: new Date().toISOString() })
+    .eq("user_id", subscriber.user_id);
+
+  return true;
+}
+
+async function processDailyEmails(): Promise<void> {
+  if (!supabase) return;
+
+  const now = new Date();
+  const targetTimezones = getTimezonesAt8AM(now);
+
+  if (targetTimezones.length === 0) {
+    console.log("Daily email cron: no timezones at 8am");
+    return;
+  }
+
+  const { data: subscribers, error } = await supabase
+    .from("email_subscribers")
+    .select("user_id, email, timezone, unsubscribe_token")
+    .in("timezone", targetTimezones)
+    .eq("is_active", true);
+
+  if (error) {
+    console.error("Daily email cron: supabase query error:", error);
+    return;
+  }
+
+  if (!subscribers || subscribers.length === 0) {
+    console.log("Daily email cron: no subscribers in target timezones", targetTimezones);
+    return;
+  }
+
+  const results = await Promise.allSettled(
+    subscribers.map((s) => sendDailyEmailToSubscriber(s as Subscriber))
+  );
+
+  const sentCount = results.filter((r) => r.status === "fulfilled" && r.value).length;
+  const failed = results.length - sentCount;
+  console.log(
+    `Daily email cron: sent=${sentCount} failed=${failed} total=${results.length} timezones=${targetTimezones.join(",")}`
+  );
+}
+
+export async function POST(req: Request) {
+  // Verify cron secret with timing-safe comparison
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+  }
+  const authHeader = req.headers.get("authorization") || "";
+  const expected = `Bearer ${cronSecret}`;
+  const authBuf = Buffer.from(authHeader);
+  const expectedBuf = Buffer.from(expected);
+  if (
+    authBuf.length !== expectedBuf.length ||
+    !timingSafeEqual(authBuf, expectedBuf)
+  ) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!supabase) {
+    return NextResponse.json({ error: "Database not configured" }, { status: 503 });
+  }
+
+  if (!process.env.RESEND_API_KEY) {
+    return NextResponse.json({ error: "Email service not configured" }, { status: 503 });
+  }
+
+  // Process subscribers after the response is sent so cron clients (cron-job.org,
+  // Vercel Cron) don't hit their proxy timeout while we fan out emails.
+  after(async () => {
+    try {
+      await processDailyEmails();
+    } catch (err) {
+      console.error("Daily email cron error:", err);
+    }
+  });
+
+  return NextResponse.json({ accepted: true }, { status: 202 });
 }
 
 // Also allow GET for Vercel Cron (it uses GET by default)
