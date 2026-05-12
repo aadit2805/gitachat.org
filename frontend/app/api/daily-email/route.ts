@@ -6,7 +6,7 @@ import { generateDailyVerseEmail } from "@/lib/email-templates";
 import { getAllVerseRefs } from "@/lib/chapters";
 import { getTodayDateString } from "@/lib/date";
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
