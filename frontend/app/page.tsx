@@ -15,9 +15,25 @@ async function submitQuery(query: string): Promise<VerseData> {
     body: JSON.stringify({ query }),
   });
 
-  const data = await res.json();
+  // Read as text first so we can give a useful message even when the
+  // platform returns a non-JSON error page (e.g. "An error occurred...").
+  const raw = await res.text();
+  let data: { error?: string } & Partial<VerseData> = {};
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    throw new Error(
+      res.ok
+        ? "Unexpected response from server. Please try again."
+        : "Server error. Please try again in a moment."
+    );
+  }
+
+  if (!res.ok) {
+    throw new Error(data.error || "Server error. Please try again in a moment.");
+  }
   if (data.error) throw new Error(data.error);
-  return data;
+  return data as VerseData;
 }
 
 function HomeContent() {
